@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	tools:context=".MainActivity"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:background="@drawable/player_background">
+
+	<androidx.cardview.widget.CardView
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		app:cardCornerRadius="16dp">
+
+		<androidx.constraintlayout.widget.ConstraintLayout
+			android:layout_width="match_parent"
+			android:layout_height="700dp">
+
+			<ImageButton
+				android:id="@+id/playerButtonClose"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="6dp"
+				android:layout_marginBottom="4dp"
+				android:alpha=".15"
+				android:background="#0000"
+				android:onClick="hidePlayer"
+				android:src="@drawable/ic_arrow_down"
+				app:layout_constraintBottom_toTopOf="@+id/playerAlbumPlaceholder"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toTopOf="parent"
+				app:tint="?android:attr/colorForeground" />
+
+			<LinearLayout
+				android:id="@+id/playerAlbumPlaceholder"
+				android:layout_width="0dp"
+				android:layout_height="0dp"
+				android:layout_marginStart="24dp"
+				android:layout_marginTop="4dp"
+				android:layout_marginEnd="24dp"
+				android:orientation="vertical"
+				app:layout_constraintDimensionRatio="w,1:1"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toBottomOf="@+id/playerButtonClose" />
+
+			<androidx.viewpager2.widget.ViewPager2
+				android:id="@+id/playerAlbumPager"
+				android:layout_width="0dp"
+				android:layout_height="0dp"
+				android:layout_marginBottom="1dp"
+				app:layout_constraintBottom_toBottomOf="@+id/space2"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toTopOf="@+id/space" />
+
+			<Space android:id="@+id/space"
+				android:layout_width="match_parent"
+				android:layout_height="24dp"
+				app:layout_constraintBottom_toTopOf="@+id/playerAlbumPlaceholder"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent" />
+
+			<Space android:id="@+id/space2"
+				android:layout_width="match_parent"
+				android:layout_height="24dp"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toBottomOf="@+id/playerAlbumPlaceholder" />
+
+			<com.google.android.material.slider.Slider
+			android:id="@+id/playerSeekBar"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="12dp"
+			android:layout_marginEnd="12dp"
+			android:value=".33"
+			app:haloRadius="12dp"
+			app:labelBehavior="gone"
+			app:layout_constraintBottom_toTopOf="@+id/playerSongTitle"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@+id/playerAlbumPlaceholder"
+			app:thumbColor="@android:color/tertiary_text_light"
+			app:thumbElevation="1dp"
+			app:thumbRadius="4dp"
+			app:trackColorActive="@android:color/tertiary_text_light"
+			app:trackColorInactive="@drawable/slider_color" />
+
+			<TextView
+			android:id="@+id/playerSongDuration"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="12dp"
+			android:lines="1"
+			android:text="0:00"
+			android:textColor="@android:color/tertiary_text_light"
+			app:layout_constraintBottom_toBottomOf="@+id/playerSeekBar"
+			app:layout_constraintStart_toStartOf="@+id/playerSeekBar" />
+
+			<TextView
+			android:id="@+id/playerCurrentPosition"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginEnd="12dp"
+			android:lines="1"
+			android:text="- 0:00"
+			android:textColor="@android:color/tertiary_text_light"
+			app:layout_constraintBottom_toBottomOf="@+id/playerSeekBar"
+			app:layout_constraintEnd_toEndOf="@+id/playerSeekBar" />
+
+			<TextView
+			android:id="@+id/playerSongTitle"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:lines="1"
+			android:text="Song Title"
+			android:textAlignment="center"
+			android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+			android:textSize="32sp"
+			app:layout_constraintBottom_toTopOf="@+id/playerArtistAlbumTextView"
+			app:layout_constraintEnd_toEndOf="@+id/playerAlbumPlaceholder"
+			app:layout_constraintStart_toStartOf="@+id/playerAlbumPlaceholder"
+			app:layout_constraintTop_toBottomOf="@+id/playerSeekBar" />
+
+			<TextView
+			android:id="@+id/playerArtistAlbumTextView"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:lines="1"
+			android:text="Artist - Album"
+			android:textAlignment="center"
+			android:textColor="?attr/colorPrimary"
+			android:textSize="26sp"
+			app:layout_constraintEnd_toEndOf="@+id/playerAlbumPlaceholder"
+			app:layout_constraintStart_toStartOf="@+id/playerAlbumPlaceholder"
+			app:layout_constraintTop_toBottomOf="@+id/playerSongTitle" />
+
+			<ImageButton
+			android:id="@+id/playerPlayPauseButton"
+			android:layout_width="48dp"
+			android:layout_height="48dp"
+			android:layout_marginTop="12dp"
+			android:background="#0000"
+			android:onClick="playPauseToggle"
+			android:scaleX="1.875"
+			android:scaleY="1.875"
+			android:src="@drawable/play_pause_selector"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@+id/playerArtistAlbumTextView"
+			app:tint="?android:attr/colorForeground" />
+
+			<ImageButton
+			android:id="@+id/playerNextButton"
+			android:layout_width="40dp"
+			android:layout_height="30dp"
+			android:background="#0000"
+			android:onClick="nextSong"
+			android:scaleX="1.75"
+			android:scaleY="1.75"
+			android:src="@drawable/ic_skip"
+			app:layout_constraintBottom_toBottomOf="@+id/playerPlayPauseButton"
+			app:layout_constraintEnd_toEndOf="@+id/playerAlbumPlaceholder"
+			app:layout_constraintStart_toEndOf="@+id/playerPlayPauseButton"
+			app:layout_constraintTop_toTopOf="@+id/playerPlayPauseButton"
+			app:tint="?android:attr/colorForeground" />
+
+			<ImageButton
+			android:id="@+id/playerPrevButton"
+			android:layout_width="40dp"
+			android:layout_height="30dp"
+			android:background="#0000"
+			android:onClick="prevSong"
+			android:scaleX="-1.75"
+			android:scaleY="1.75"
+			android:src="@drawable/ic_skip"
+			app:layout_constraintBottom_toBottomOf="@+id/playerPlayPauseButton"
+			app:layout_constraintEnd_toStartOf="@+id/playerPlayPauseButton"
+			app:layout_constraintStart_toStartOf="@+id/playerAlbumPlaceholder"
+			app:layout_constraintTop_toTopOf="@+id/playerPlayPauseButton"
+			app:tint="?android:attr/colorForeground" />
+
+			<com.google.android.material.slider.Slider
+			android:id="@+id/playerVolumeBar"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="8dp"
+			android:layout_marginTop="12dp"
+			android:layout_marginEnd="8dp"
+			android:value=".5"
+			app:haloRadius="12dp"
+			app:labelBehavior="gone"
+			app:layout_constraintEnd_toEndOf="@+id/playerAlbumPlaceholder"
+			app:layout_constraintStart_toStartOf="@+id/playerAlbumPlaceholder"
+			app:layout_constraintTop_toBottomOf="@+id/playerPlayPauseButton"
+			app:thumbColor="@color/white"
+			app:thumbElevation="4dp"
+			app:thumbRadius="12dp"
+			app:trackColorActive="@android:color/tertiary_text_light"
+			app:trackColorInactive="@drawable/slider_color" />
+
+			<ImageView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			app:layout_constraintBottom_toBottomOf="@+id/playerVolumeBar"
+			app:layout_constraintEnd_toStartOf="@+id/playerVolumeBar"
+			app:layout_constraintStart_toStartOf="@+id/playerVolumeBar"
+			app:layout_constraintTop_toTopOf="@+id/playerVolumeBar"
+			app:srcCompat="@drawable/ic_volume_mute" />
+
+			<ImageView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			app:layout_constraintBottom_toBottomOf="@+id/playerVolumeBar"
+			app:layout_constraintEnd_toEndOf="@+id/playerVolumeBar"
+			app:layout_constraintStart_toEndOf="@+id/playerVolumeBar"
+			app:layout_constraintTop_toTopOf="@+id/playerVolumeBar"
+			app:srcCompat="@drawable/ic_volume_full" />
+
+			<ImageButton
+			android:layout_width="24dp"
+			android:layout_height="24dp"
+			android:layout_marginStart="2dp"
+			android:background="#0000"
+			android:onClick="openDirectory"
+			android:scaleX="1.5"
+			android:scaleY="1.5"
+			android:src="@drawable/ic_add"
+			app:layout_constraintBottom_toBottomOf="@+id/playerDevicesButton"
+			app:layout_constraintStart_toStartOf="@+id/playerVolumeBar"
+			app:layout_constraintTop_toTopOf="@+id/playerDevicesButton"
+			app:tint="?attr/colorPrimary" />
+
+			<ImageButton
+			android:id="@+id/playerDevicesButton"
+			android:layout_width="40dp"
+			android:layout_height="36dp"
+			android:layout_marginBottom="8dp"
+			android:background="#0000"
+			android:scaleX="1.5"
+			android:scaleY="1.5"
+			android:src="@drawable/ic_devices"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintHorizontal_bias="0.5"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@+id/playerVolumeBar"
+			app:tint="?attr/colorPrimary" />
+
+			<ImageButton
+			android:id="@+id/playerMenuButton"
+			android:layout_width="28dp"
+			android:layout_height="24dp"
+			android:background="#0000"
+			android:scaleX="1.5"
+			android:scaleY="1.5"
+			android:src="@drawable/ic_dots_horizontal"
+			app:layout_constraintBottom_toBottomOf="@+id/playerDevicesButton"
+			app:layout_constraintEnd_toEndOf="@+id/playerVolumeBar"
+			app:layout_constraintTop_toTopOf="@+id/playerDevicesButton"
+			app:tint="?attr/colorPrimary" />
+
+		</androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+
+
+	</androidx.cardview.widget.CardView>
+
+</LinearLayout>

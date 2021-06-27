@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Music Player</string>
+    <string name="unknown_album">Unknown Album</string>
+    <string name="unknown_artist">Unknown Artist</string>
+    <string name="cancel">Cancel</string>
+    <string name="remove_from_library">Remove from Library</string>
+    <string name="add_to_playlist">Add to a Playlist ...</string>
+    <string name="next_title">Next Title</string>
+    <string name="library">Library</string>
+</resources>
