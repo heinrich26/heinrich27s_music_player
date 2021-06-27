@@ -3,17 +3,15 @@
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
 	android:orientation="vertical"
-	tools:context=".FragmentPlaylistOverview">
+	tools:context=".MainActivity">
 
-	<ListView
+	<androidx.recyclerview.widget.RecyclerView
 		android:id="@+id/playlistListView"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:height="?android:attr/listPreferredItemHeight"
-		android:divider="@null"
-		android:dividerHeight="0dp"
-		tools:listheader="@layout/playlist_overview_header"
+		app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
 		tools:listitem="@layout/playlist_overview_item" />
 
 </LinearLayout>

@@ -24,7 +24,11 @@
     <autoscroll-to-editor value="false" />
     <autoscroll-from-editor value="true" />
     <show-object-properties value="true" />
-    <loaded-nodes />
+    <loaded-nodes>
+      <connection connection-id="f2872d36-3a65-4b91-b333-de9fc6d4ec33">
+        <schema name="main" object-types="table, view, constraint, index, column, dataset trigger" />
+      </connection>
+    </loaded-nodes>
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="f2872d36-3a65-4b91-b333-de9fc6d4ec33">
@@ -43,6 +47,11 @@
   </component>
   <component name="DBNavigator.Project.DatasetFilterManager">
     <filter-actions connection-id="f2872d36-3a65-4b91-b333-de9fc6d4ec33" dataset="main.trackList" active-filter-id="EMPTY_FILTER" />
+    <filter-actions connection-id="f2872d36-3a65-4b91-b333-de9fc6d4ec33" dataset="main.Playlists" active-filter-id="EMPTY_FILTER">
+      <filter id="66f7b5e1-6b6b-4910-8d07-cbb3ef3acaa6" name="Filter 1" temporary="false" custom-name="false" type="basic" join-type="AND">
+        <condition column="id" operator="=" value="" active="true" />
+      </filter>
+    </filter-actions>
   </component>
   <component name="DBNavigator.Project.EditorStateManager">
     <last-used-providers />

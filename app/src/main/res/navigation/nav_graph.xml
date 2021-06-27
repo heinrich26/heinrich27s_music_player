@@ -16,6 +16,13 @@
 			app:exitAnim="@anim/to_left"
 			app:popEnterAnim="@anim/from_left"
 			app:popExitAnim="@anim/to_right" />
+		<action
+			android:id="@+id/actionHomeToPlaylistOverview"
+			app:destination="@id/fragmentPlaylistOverview"
+			app:enterAnim="@anim/from_right"
+			app:exitAnim="@anim/to_left"
+			app:popEnterAnim="@anim/from_left"
+			app:popExitAnim="@anim/to_right" />
 	</fragment>
 	<fragment
 		android:id="@+id/fragmentPlaylist"
@@ -30,5 +37,17 @@
 			android:name="library"
 			app:argType="boolean"
 			android:defaultValue="false" />
+	</fragment>
+	<fragment
+		android:id="@+id/fragmentPlaylistOverview"
+		android:name="com.example.musicplayer.FragmentPlaylistOverview"
+		android:label="">
+		<action
+			android:id="@+id/actionPlaylistOverviewToPlaylist"
+			app:destination="@id/fragmentPlaylist"
+			app:enterAnim="@anim/from_right"
+			app:exitAnim="@anim/to_left"
+			app:popEnterAnim="@anim/from_left"
+			app:popExitAnim="@anim/to_right" />
 	</fragment>
 </navigation>

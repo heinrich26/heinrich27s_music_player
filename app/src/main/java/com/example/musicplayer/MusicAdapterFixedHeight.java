@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -16,12 +17,15 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
+import androidx.recyclerview.selection.ItemDetailsLookup;
+import androidx.recyclerview.selection.SelectionTracker;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.musicplayer.data.musicDatabaseDao;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.example.musicplayer.MainActivity.formatMillis;
 
@@ -36,6 +40,9 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 	private final musicDatabaseDao songDao;
 	private SongMenuBottomSheetFragment.SongMenuActions songMenuActions;
 	private String playlistTitle, playlistDesc;
+	private View.OnClickListener itemClickListener;
+	private List<Integer> selection = new ArrayList<>();
+	private boolean selectionMode = false;
 
 	MusicAdapterFixedHeight(Context parentContext, ArrayList<musicTrack> musicFiles, musicDatabaseDao songDao, String playlistTitle, String playlistDesc) {
 		this.musicFiles = musicFiles;
@@ -43,6 +50,7 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 		this.songDao = songDao;
 		this.playlistTitle = playlistTitle;
 		this.playlistDesc = playlistDesc;
+		setHasStableIds(true);
 	}
 
 	public void removeItem(int position) {
@@ -53,7 +61,6 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 	public void restoreItem(musicTrack item, int position) {
 		musicFiles.add(position, item);
 		notifyItemInserted(position + 1);
-		songDao.addTrack(item);
 	}
 
 	public byte[] getAlbumArt(String uri) {
@@ -85,10 +92,45 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 		}
 	}
 
+
+	// selection based stuff
+	private boolean itemIsSelected(int position) { return selection.contains(position); }
+
+	private void toggleSelectedState(int position) {
+		if (itemIsSelected(position)) {
+			selection.remove(position);
+		} else {
+			selection.add(position);
+		}
+		notifyItemChanged(position);
+	}
+
+	public void clearSelection() {
+		for (Integer i : selection) {
+			selection.remove(i);
+			notifyItemChanged(i);
+		}
+	}
+
+	public int getSelectedItemCount() { return selection.size(); }
+
+	public List<Integer> getSelectedItems() { return selection; }
+
+	public void enterSelectMode() {
+		selectionMode = true;
+	}
+
+	public void leaveSelectMode() {
+		selectionMode = false;
+	}
+
+
+
 	@Override
 	public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 		if (holder instanceof musicViewHolder) {
 			musicViewHolder musicHolder = (musicViewHolder) holder;
+			musicHolder.itemView.setSelected(itemIsSelected(position));
 
 			final musicTrack track = musicFiles.get(position - 1);
 
@@ -154,7 +196,11 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 		this.songMenuActions = songMenuActions;
 	}
 
-	public static class musicViewHolder extends RecyclerView.ViewHolder {
+	public void setItemClickListener(View.OnClickListener listener) {
+		this.itemClickListener = listener;
+	}
+
+	public class musicViewHolder extends RecyclerView.ViewHolder {
 		TextView songTitle, subtextInfo;
 		ImageView albumCover;
 		byte[] albumArt;
@@ -165,6 +211,16 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 			subtextInfo = itemView.findViewById(R.id.subtextInfo);
 			albumCover = itemView.findViewById(R.id.albumCover);
 			albumCover.setClipToOutline(true);
+			itemView.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					if (!selectionMode) {
+						itemClickListener.onClick(v);
+					} else {
+						toggleSelectedState(getAdapterPosition());
+					}
+				}
+			});
 		}
 	}
 

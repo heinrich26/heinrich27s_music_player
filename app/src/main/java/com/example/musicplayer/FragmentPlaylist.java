@@ -10,6 +10,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.selection.SelectionTracker;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -30,12 +31,16 @@ public class FragmentPlaylist extends Fragment {
 	private RecyclerView playlistView;
 	private MusicAdapterFixedHeight playlistAdapter;
 	private ArrayList<musicTrack> playlistTracks;
+	private SelectionTracker<Long> tracker = null;
 
 	private MusicPlayerViewModel viewModel;
 
 	private MainActivity app;
 
 	private String playlistTitle, playlistDesc;
+	private Playlist mPlaylist;
+	private boolean isLibrary;
+
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -46,8 +51,8 @@ public class FragmentPlaylist extends Fragment {
 
 	@Override
 	public void onViewCreated(View view, Bundle savedInstanceState) {
-		boolean isLibrary = FragmentPlaylistArgs.fromBundle(getArguments()).getLibrary();
-		Playlist playlist = FragmentPlaylistArgs.fromBundle(getArguments()).getPlaylist();
+		isLibrary = FragmentPlaylistArgs.fromBundle(getArguments()).getLibrary();
+		mPlaylist = FragmentPlaylistArgs.fromBundle(getArguments()).getPlaylist();
 		playlistView = view.findViewById(R.id.fragmentPlaylistView);
 
 		if (isLibrary) {
@@ -55,10 +60,12 @@ public class FragmentPlaylist extends Fragment {
 			playlistTitle = getString(R.string.library);
 			playlistDesc = "";
 		} else {
-			playlistTracks = playlist.songs.stream().map(viewModel.musicFilesList::get).collect(Collectors.toCollection(ArrayList::new));
-			playlistTitle = playlist.name;
-			playlistDesc = playlist.description;
+			playlistTracks = mPlaylist.songs.stream().map(viewModel.musicFilesList::get).collect(Collectors.toCollection(ArrayList::new));
+			playlistTitle = mPlaylist.name;
+			playlistDesc = mPlaylist.description;
 		}
+
+
 
 		playlistAdapter = new MusicAdapterFixedHeight(requireContext(), playlistTracks, viewModel.songDatabaseDao, playlistTitle, playlistDesc);
 		SongMenuBottomSheetFragment.SongMenuActions songMenuActions = new SongMenuBottomSheetFragment.SongMenuActions() {
@@ -79,7 +86,12 @@ public class FragmentPlaylist extends Fragment {
 		};
 
 		playlistAdapter.setSongMenuActions(songMenuActions);
+		playlistAdapter.setItemClickListener(v -> {
+			final int position = playlistView.getChildLayoutPosition(v) - 1;
+			app.playSong( (isLibrary) ? position : mPlaylist.songs.get(position), false);
+		});
 		playlistView.setAdapter(playlistAdapter);
+
 		playlistView.setLayoutManager(new LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false));
 
 		int[] ATTRS = new int[]{android.R.attr.listDivider};
@@ -110,11 +122,17 @@ public class FragmentPlaylist extends Fragment {
 
 	public void removeFromLibrary(int position) {
 		final musicTrack item = playlistAdapter.musicFiles.get(position);
+		final int libraryPos = getLibraryPos(position);
 
-		// machen das nur ignored wird, wenn es die Library ist!
-		viewModel.songDatabaseDao.addIgnore(new ignores(item.getPath()));
+
+		if (isLibrary) {
+			// machen das nur ignored wird, wenn es die Library ist!
+			viewModel.songDatabaseDao.addIgnore(new ignores(item.getPath()));
+			viewModel.songDatabaseDao.deleteTrack(item);
+		} else {
+			mPlaylist.songs.remove(position);
+		}
 		playlistAdapter.removeItem(position);
-
 
 		Snackbar snackbar = Snackbar
 				.make(playlistView, "Song was removed from the Playlist.", Snackbar.LENGTH_LONG);
@@ -122,7 +140,12 @@ public class FragmentPlaylist extends Fragment {
 
 			playlistAdapter.restoreItem(item, position);
 			playlistView.scrollToPosition( (position > 0) ? position-1 : 0 );
-			viewModel.songDatabaseDao.deleteIgnore(new ignores(item.getPath()));
+			if (isLibrary) {
+				viewModel.songDatabaseDao.addTrack(item);
+				viewModel.songDatabaseDao.deleteIgnore(new ignores(item.getPath()));
+			} else {
+				mPlaylist.songs.add(position, libraryPos);
+			}
 		});
 
 		snackbar.setActionTextColor(Color.BLUE);
@@ -131,7 +154,12 @@ public class FragmentPlaylist extends Fragment {
 
 	@Override
 	public void onDestroy() {
-		// save the playlist to the Dao
+		if (!isLibrary) viewModel.songDatabaseDao.addPlaylist(mPlaylist);
 		super.onDestroy();
+	}
+
+	private int getLibraryPos(int position) {
+		if (isLibrary) return position;
+		else return mPlaylist.songs.get(position);
 	}
 }

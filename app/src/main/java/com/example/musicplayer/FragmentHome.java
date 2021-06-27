@@ -36,5 +36,14 @@ public class FragmentHome extends Fragment {
 				Navigation.findNavController(view).navigate(action);
 			}
 		});
+		toPlaylists = view.findViewById(R.id.action_to_playlists);
+		toPlaylists.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+//				FragmentHomeDirections. action = FragmentHomeDirections.actionHomeToPlaylistOverview();
+//				action.setLibrary(true);
+				Navigation.findNavController(view).navigate(FragmentHomeDirections.actionHomeToPlaylistOverview());
+			}
+		});
 	}
 }

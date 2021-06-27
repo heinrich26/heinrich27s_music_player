@@ -5,8 +5,8 @@
 	android:id="@+id/PlaylistItem"
 	android:layout_width="match_parent"
 	android:layout_height="72dp"
-	android:onClick="playFromView"
-	android:longClickable="true">
+	android:longClickable="true"
+	android:background="@drawable/music_item_selector">
 
 	<include layout="@layout/music_item"/>
 
