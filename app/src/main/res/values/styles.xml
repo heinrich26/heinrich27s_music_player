@@ -2,6 +2,10 @@
 <resources>
 	<style name="TransparentBottomSheetDialogTheme" parent="ThemeOverlay.MaterialComponents.DayNight.BottomSheetDialog">
 		<item name="bottomSheetStyle">@style/TransparentBottomSheetStyle</item>
+		<item name="android:windowCloseOnTouchOutside">true</item>
+		<item name="android:backgroundDimEnabled">true</item>
+		<item name="android:backgroundDimAmount">0.3</item>
+		<item name="android:windowIsFloating">true</item>
 	</style>
 
 	<style name="TransparentBottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">

@@ -9,7 +9,7 @@
 	android:background="?attr/selectableItemBackground">
 
 	<com.google.android.material.card.MaterialCardView
-		android:id="@+id/albumCard"
+		android:id="@+id/playlistCoverCard"
 		android:layout_width="60dp"
 		android:layout_height="60dp"
 		android:layout_marginStart="6dp"
@@ -47,7 +47,7 @@
 		android:textSize="24sp"
 		app:layout_constraintBottom_toTopOf="@+id/subtextInfo"
 		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toEndOf="@+id/albumCard"
+		app:layout_constraintStart_toEndOf="@+id/playlistCoverCard"
 		app:layout_constraintTop_toTopOf="parent"
 		tools:text="@tools:sample/lorem/random" />
 
@@ -68,7 +68,7 @@
 		android:textSize="20sp"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toEndOf="@+id/albumCard"
+		app:layout_constraintStart_toEndOf="@+id/playlistCoverCard"
 		app:layout_constraintTop_toBottomOf="@+id/songTitle" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

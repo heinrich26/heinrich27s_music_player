@@ -38,6 +38,7 @@ abstract public class SimpleSwipeController extends ItemTouchHelper.Callback {
 
 	@Override
 	public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+		if (viewHolder instanceof MusicAdapterFixedHeight.playlistHeader) return  makeMovementFlags(0,0);
 		return makeMovementFlags(0, ItemTouchHelper.LEFT);
 	}
 

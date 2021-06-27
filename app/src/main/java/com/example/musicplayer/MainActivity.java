@@ -375,10 +375,6 @@ public class MainActivity extends AppCompatActivity{
 				// implement autoplay
 			});
 
-			// to playlist fragment
-//			playlistView = findViewById(R.id.playlistView);
-//			playlistView.setHasFixedSize(true);
-
 
 
 			seekBar = findViewById(R.id.seekBar);
@@ -591,10 +587,11 @@ public class MainActivity extends AppCompatActivity{
 				@Override
 				public void onPageSelected(int position) {
 					if (playerCarousel.getCurrentItem() != position) playerCarousel.setCurrentItem(position, isPlayerVisible());
-					if (position != viewModel.currentTrackByPos) {
+					System.out.println(scrollTrackOnly);
+					if (position != viewModel.currentTrackByPos || scrollTrackOnly) {
 						viewModel.currentTrackByPos = position;
-						if (!scrollTrackOnly) playSong(position, true);
-						else scrollTrackOnly = false;
+						if (scrollTrackOnly) scrollTrackOnly = false;
+						else playSong(position, true);
 					}
 				}
 
@@ -695,11 +692,11 @@ public class MainActivity extends AppCompatActivity{
 		musicTrack item;
 		if (!intentional) {
 			item = viewModel.musicFilesList.get(position);
-			viewModel.currentTrackByPos = (viewModel.queue.size() == 0)? 0 :viewModel.currentTrackByPos + 1;
+			viewModel.currentTrackByPos = (viewModel.queue.size() == 0)? 0 : viewModel.currentTrackByPos + 1;
 			viewModel.queue.add(viewModel.currentTrackByPos, item);
 			musicAdapterCurrentTrack.notifyItemInserted(viewModel.currentTrackByPos);
 			playerAlbumArtAdapter.notifyItemInserted(viewModel.currentTrackByPos);
-			if (viewModel.currentTrackByPos != 0) {
+			if (viewModel.queue.size() != 1) {
 				scrollTrackOnly = true;
 				currentTrackPager.setCurrentItem(viewModel.currentTrackByPos, true);
 			}
@@ -747,7 +744,7 @@ public class MainActivity extends AppCompatActivity{
 	}
 
 	public void playFromView(View view) {
-		int position = ((RecyclerView) view.getParent()).getChildLayoutPosition(view);
+		int position = ((RecyclerView) view.getParent()).getChildLayoutPosition(view) - 1;
 		playSong(position, false);
 	}
 

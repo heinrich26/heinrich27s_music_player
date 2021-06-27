@@ -10,7 +10,7 @@
 		android:name="com.example.musicplayer.FragmentHome"
 		android:label="@string/app_name">
 		<action
-			android:id="@+id/action_fragmentHome_to_fragmentPlaylist"
+			android:id="@+id/actionHomeToPlaylist"
 			app:destination="@id/fragmentPlaylist"
 			app:enterAnim="@anim/from_right"
 			app:exitAnim="@anim/to_left"
@@ -20,5 +20,15 @@
 	<fragment
 		android:id="@+id/fragmentPlaylist"
 		android:name="com.example.musicplayer.FragmentPlaylist"
-		android:label="@string/library" />
+		android:label="@string/library" >
+		<argument
+			android:name="playlist"
+			app:argType="com.example.musicplayer.data.Playlist"
+			app:nullable="true"
+			android:defaultValue="@null" />
+		<argument
+			android:name="library"
+			app:argType="boolean"
+			android:defaultValue="false" />
+	</fragment>
 </navigation>

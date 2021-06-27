@@ -4,12 +4,9 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
-
-import com.example.musicplayer.R;
 
 public class FragmentHome extends Fragment {
 	public FragmentHome() {
@@ -17,10 +14,14 @@ public class FragmentHome extends Fragment {
 	}
 
 	private TextView toLibrary, toPlaylists, toArtists, toAlbums;
+	private MusicPlayerViewModel viewModel;
+	private MainActivity app;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		viewModel = new ViewModelProvider(requireActivity()).get(MusicPlayerViewModel.class);
+		app = (MainActivity) getActivity();
 	}
 
 	@Override
@@ -30,7 +31,9 @@ public class FragmentHome extends Fragment {
 		toLibrary.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Navigation.findNavController(view).navigate(R.id.action_fragmentHome_to_fragmentPlaylist);
+				FragmentHomeDirections.ActionHomeToPlaylist action = FragmentHomeDirections.actionHomeToPlaylist();
+				action.setLibrary(true);
+				Navigation.findNavController(view).navigate(action);
 			}
 		});
 	}

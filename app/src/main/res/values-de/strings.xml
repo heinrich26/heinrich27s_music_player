@@ -8,4 +8,11 @@
 	<string name="add_to_playlist">Zu einer Playlist hinzufügen ...</string>
 	<string name="next_title">Nächster Titel</string>
 	<string name="library">Mediathek</string>
+	<string name="playlist_description">Beschreibung</string>
+	<string name="playlist_name">Name der Playlist</string>
+	<string name="new_playlist">Neue Playlist</string>
+	<string name="add_music">Musik hinzufügen</string>
+	<string name="done">Fertig</string>
+	<string name="playlists">Playlists</string>
+	<string name="unnamed_playlist">Unbenannte Playlist</string>
 </resources>
