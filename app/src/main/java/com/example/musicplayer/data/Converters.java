@@ -10,13 +10,13 @@ import java.util.ArrayList;
 
 public class Converters {
 	@TypeConverter
-	public static ArrayList<Integer> fromString(String value) {
-		Type list = new TypeToken<ArrayList<Integer>>() {}.getType();
+	public static ArrayList<Long> fromString(String value) {
+		Type list = new TypeToken<ArrayList<Long>>() {}.getType();
 		return new Gson().fromJson(value, list);
 	}
 
 	@TypeConverter
-	public static String fromArrayList(ArrayList<Integer> list) {
+	public static String fromArrayList(ArrayList<Long> list) {
 		String json = new Gson().toJson(list);
 		return json;
 	}

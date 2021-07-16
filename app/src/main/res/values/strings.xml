@@ -1,17 +1,35 @@
 <resources>
-    <string name="app_name">Music Player</string>
-    <string name="unknown_album">Unknown Album</string>
-    <string name="unknown_artist">Unknown Artist</string>
-    <string name="cancel">Cancel</string>
-    <string name="remove_from_library">Remove from Library</string>
-    <string name="add_to_playlist">Add to a Playlist ...</string>
-    <string name="next_title">Next Title</string>
-    <string name="library">Library</string>
-    <string name="playlist_description">Description</string>
-    <string name="playlist_name">Name of the Playlist</string>
-    <string name="new_playlist">New Playlist</string>
-    <string name="add_music">Add Music</string>
-    <string name="done">Done</string>
-    <string name="playlists">Playlists</string>
-    <string name="unnamed_playlist">Unnamed Playlist</string>
+	<string name="app_name">Music Player</string>
+
+	<string name="unknown_album">Unknown Album</string>
+	<string name="unknown_artist">Unknown Artist</string>
+
+	<string name="select">Select</string>
+	<string name="delete">Remove</string>
+	<string name="done">Done</string>
+	<string name="cancel">Cancel</string>
+
+	<string name="playlists">Playlists</string>
+	<string name="unnamed_playlist">Unnamed Playlist</string>
+	<string name="playlist_name">Name of the Playlist</string>
+	<string name="new_playlist">New Playlist</string>
+	<string name="playlist_description">Description</string>
+	<string name="remove_from_library">Remove from Library</string>
+	<string name="remove_from_playlist">Remove from Playlist</string>
+	<string name="add_to_playlist">Add to a Playlist …</string>
+	<string name="edit_playlist">Edit Playlist</string>
+	<string name="library">Library</string>
+
+	<string name="next_title">Next Title</string>
+	<string name="add_music">Add Music</string>
+	<string name="added_to_queue">Added to Queue</string>
+	<string name="added_to_queue_extra">This will be played next.</string>
+	<string name="select_song">Select Songs</string>
+
+	<string name="addTitlesToPlaylist">Add Titles to \"%1$s\".</string>
+	<plurals name="titlesAddedToPlaylist">
+		<item quantity="zero">Add Titles to \"%2$s\".</item>
+		<item quantity="one">%d Title added to \"%2$s\".</item>
+		<item quantity="other">%d Titles added to \"%2$s\".</item>
+	</plurals>
 </resources>

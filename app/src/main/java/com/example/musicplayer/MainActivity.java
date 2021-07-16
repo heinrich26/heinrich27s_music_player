@@ -6,8 +6,8 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.ActivityManager;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.ContentObserver;
@@ -18,6 +18,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.DocumentsContract;
@@ -27,14 +28,20 @@ import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.appcompat.widget.Toolbar;
@@ -49,6 +56,7 @@ import androidx.viewpager2.widget.CompositePageTransformer;
 import androidx.viewpager2.widget.MarginPageTransformer;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.example.musicplayer.data.Playlist;
 import com.example.musicplayer.data.folderRef;
 import com.example.musicplayer.data.musicDatabase;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -60,10 +68,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
-@SuppressWarnings("deprecation")
+
 public class MainActivity extends AppCompatActivity{
 
 	public MainActivity() {}
@@ -75,41 +84,56 @@ public class MainActivity extends AppCompatActivity{
 	private int currentVolume;
 
 	private NavController navController;
+	Toolbar mainAppbar;
 
+	private final ActivityResultLauncher<Uri> askForFolderLauncher = registerForActivityResult(new ActivityResultContracts.OpenDocumentTree(),
+			new ActivityResultCallback<Uri>() {
+				@RequiresApi(api = Build.VERSION_CODES.Q)
+				@Override
+				public void onActivityResult(Uri result) {
+					if (result != null) {
+							getContentResolver().takePersistableUriPermission(result, Intent.FLAG_GRANT_READ_URI_PERMISSION
+									| Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+							// Perform operations on the document using its URI.
+							Uri treeUri = DocumentsContract.buildChildDocumentsUriUsingTree(result, DocumentsContract.getTreeDocumentId(result));
+							if (treeUri != null) addFolderToLibrary(treeUri, true, false);
+						}
+					}
+			});
+
+	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		setContentView(R.layout.main_layout);
+		setContentView(R.layout.activity_main);
 		viewModel = new ViewModelProvider(this).get(MusicPlayerViewModel.class);
 		viewModel.mediaPlayer = mp;
-
-		viewModel.songMenuActions = new SongMenuBottomSheetFragment.SongMenuActions() {
-			@Override
-			public void actionRemoveFromLibrary(int position) {}
-
-			@Override
-			public void actionAddToQueue(int position) { addToQueue(position); }
-
-			@Override
-			public void actionAddToPlaylist(int position) {}
-		};
 		
 		playPauseButton = findViewById(R.id.playPauseButton);
 		currentTrackPager = findViewById(R.id.currentTrackPager);
 
-		final Toolbar mainAppbar = findViewById(R.id.main_appbar);
-//		setSupportActionBar(mainAppbar);
-//		getSupportActionBar().setDisplayShowTitleEnabled(false);
-//		getSupportActionBar().setDisplayShowHomeEnabled(true);
+		mainAppbar = findViewById(R.id.main_appbar);
+		setSupportActionBar(mainAppbar);
 
 		NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
 		navController = navHostFragment.getNavController();
-		NavigationUI.setupWithNavController((Toolbar) mainAppbar, navController);
+		NavigationUI.setupWithNavController(mainAppbar, navController);
 
 		audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
 		maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 		currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+
+
+		Window window = getWindow();
+
+		// clear FLAG_TRANSLUCENT_STATUS flag:
+		window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+
+		// add FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS flag to the window
+		window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+
 
 		getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true, new VolumeContentObserver((Build.VERSION.SDK_INT >= 28) ? new Handler(Looper.myLooper()) : new Handler()));
 	}
@@ -158,112 +182,156 @@ public class MainActivity extends AppCompatActivity{
 
 	// Methods for selecting new Music Directory's
 	public void openDirectory(View view) {
-		// Choose a directory using the system's file picker.
-		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-
-		startActivityForResult(intent, 2);
+		askForFolderLauncher.launch(Uri.fromFile(Environment.getExternalStorageDirectory()));
 	}
 
 	@RequiresApi(api = Build.VERSION_CODES.Q)
-	@SuppressLint("MissingSuperCall")
-	@Override
-	public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
-		if (requestCode == 2
-				&& resultCode == Activity.RESULT_OK) {
-			// The result data contains a URI for the document or directory that the user selected.
-			if (resultData != null) {
-				Uri uri = resultData.getData();
-				final int takeFlags = resultData.getFlags()
-						& (Intent.FLAG_GRANT_READ_URI_PERMISSION
-						| Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-				getContentResolver().takePersistableUriPermission(uri, takeFlags);
-				// Perform operations on the document using its URI.
-				DocumentFile document = DocumentFile.fromTreeUri(this, DocumentsContract.buildChildDocumentsUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri)));
-				if (document != null) addFolderToLibrary(document, true, false);
-			}
-		}
-	}
+	@WorkerThread
+	public void addFolderToLibrary(Uri treeUri, boolean rootCall, boolean load) {
 
-	@RequiresApi(api = Build.VERSION_CODES.Q)
-	public void addFolderToLibrary(DocumentFile treeDocument, boolean rootCall, boolean load) {
-		if (viewModel.songDatabaseDao.exists(treeDocument.getUri().toString()) && !load) return;
-		// don't take the Root dir (trying its best)
-		else if ("content://com.android.externalstorage.documents/tree/primary%3A/document/primary%3A".equals(treeDocument.getUri().toString())) {
+		if (viewModel.songDatabaseDao.exists(treeUri.toString()) && !load) return;
+			// don't take the Root dir (trying its best)
+		else if ("content://com.android.externalstorage.documents/tree/primary%3A/document/primary%3A".equals(treeUri.toString())) {
 			Toast.makeText(this, "You can't select the Filesystem Root, please select a subfolder!", Toast.LENGTH_SHORT).show();
 			return;
 		}
 
+		final DocumentFile treeDocument = DocumentFile.fromTreeUri(this, treeUri);
 		final DocumentFile[] childDocs = treeDocument.listFiles();
+
 
 		if (childDocs.length == 0) {
 			// empty folder
 			return;
-		} else  {
+		} else {
 			final String[] projection = {
 					MediaStore.Audio.Media.TITLE, // 0
 					MediaStore.Audio.Media.ARTIST, // 1
 					MediaStore.Audio.Media.ALBUM, // 2
 					MediaStore.Audio.Media.DURATION, // 3
 					MediaStore.Audio.Media.RELATIVE_PATH, // 4
-					MediaStore.Audio.Media.DATA // 5
+					MediaStore.Audio.Media.DATA, // 5
+					MediaStore.Audio.Media._ID
 			};
 
-			if (!load && rootCall) viewModel.songDatabaseDao.insertFolder(new folderRef(treeDocument.getUri().toString()));
+			if (!load && rootCall) viewModel.songDatabaseDao.insertFolder(new folderRef(treeUri.toString()));
+
+			final ArrayList<String> mediaIDs = new ArrayList<>();
+			final ArrayList<Uri> mediaUris = new ArrayList<>();
+
 			for (DocumentFile child : childDocs) {
 				if (child.isDirectory()) {
-					addFolderToLibrary(child, false, load);
+					getIdsFromDocumentTree(mediaIDs, mediaUris, child);
 				} else if (musicMimes.contains(child.getType())) {
 					final Uri mediaUri;
+					final String id;
 					try {
 						mediaUri = MediaStore.getMediaUri(this, child.getUri());
+						mediaUris.add(mediaUri);
+						final String[] splitId = mediaUri.getPath().split("/");
+						id = splitId[splitId.length - 1];
 					} catch (IllegalArgumentException exception) {
 						continue;
 					}
 
+
 					// if ignored, we don't want this!
 					if (viewModel.songDatabaseDao.getIgnoredUris().contains(mediaUri.toString())) continue;
-
-
-					final Cursor cursor;
-					cursor = this.getContentResolver().query(mediaUri, projection, null, null, null);
-
-					if (cursor != null && cursor.moveToNext()) {
-						// make unknown Artist null
-						String artist = cursor.getString(1);
-						if (artist.equals(MediaStore.UNKNOWN_STRING)) artist = null;
-
-						// determine if the album is the folder name, so we can doublecheck
-						String album = cursor.getString(2);
-						if (cursor.getString(4).contains(album)) {
-							MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-							try {
-								mediaMetadataRetriever.setDataSource(this, mediaUri);
-							} catch (Exception e) {
-								// the file is corrupt, can't be played etc.
-								continue;
-							}
-							album = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-							mediaMetadataRetriever.release();
-						}
-
-						final musicTrack track = new musicTrack(mediaUri.toString(),
-								cursor.getString(0), artist,	album,
-								Integer.parseInt(cursor.getString(3)), cursor.getString(5), false, false);
-						viewModel.musicFilesList.add(track);
-						viewModel.songDatabaseDao.addTrack(track);
-
-						cursor.close();
-					}
+					mediaIDs.add(id);
 				}
 			}
+
+			final String selection = MediaStore.Audio.Media._ID + " IN (" + makePlaceholders(mediaIDs.size()) + ")";
+//			AND " + MediaStore.Audio.Media.IS_MUSIC + "=?"
+			final String[] selectionArgs = new String[mediaIDs.size()];
+			for (int i = 0; i < mediaIDs.size(); i++)
+				selectionArgs[i] = mediaIDs.get(i);
+//			selectionArgs[mediaIDs.size()] = String.valueOf(true);
+
+
+			final ContentResolver contentResolver = getContentResolver();
+			final Cursor cursor;
+
+
+//			cursor = new MergeCursor(new Cursor[] {
+//					contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection, selection, selectionArgs, null, null),
+//					contentResolver.query(MediaStore.Audio.Media.INTERNAL_CONTENT_URI, projection, selection, selectionArgs, null, null)
+//			});
+
+			// TODO Handle Internal and External Storage
+
+			cursor = contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection, selection, selectionArgs, null, null);
+
+
+			if (cursor != null && cursor.moveToFirst()) {
+				while (cursor.moveToNext()) {
+					// make unknown Artist null
+					final String id = cursor.getString(6);
+					System.out.println(id);
+					final Uri mediaUri = mediaUris.get(mediaIDs.indexOf(id));
+
+					String artist = cursor.getString(1);
+					if (artist.equals(MediaStore.UNKNOWN_STRING)) artist = null;
+
+					// determine if the album is the folder name, so we can doublecheck
+					String album = cursor.getString(2);
+					final String path = cursor.getString(5);
+					if (cursor.getString(4).contains(album)) {
+						MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+						try {
+							mediaMetadataRetriever.setDataSource(this, mediaUri);
+						} catch (Exception e) {
+							// the file is corrupt, can't be played etc.
+							continue;
+						}
+						album = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+						mediaMetadataRetriever.release();
+					}
+
+					final musicTrack track = new musicTrack(0, mediaUri.toString(),
+							cursor.getString(0), artist, album,
+							cursor.getInt(3), path,
+							false, false);
+					viewModel.songDatabaseDao.addTrack(track);
+				}
+				cursor.close();
+			}
 		}
-// notify the fragment
-//		if (rootCall) {
-//			if (viewModel.musicFilesList.size() != 0 && musicAdapter != null) {
-//				// update Adapter from data
-//				musicAdapter.notifyDataSetChanged();
-//			}
-//		}
+		viewModel.musicDict.putAll(viewModel.songDatabaseDao.getMusicDict());
+		final FragmentPlaylist playlist = (FragmentPlaylist) getSupportFragmentManager().findFragmentById(R.id.fragmentPlaylist);
+		if (playlist != null) playlist.updateLibraryData();
+		refreshQueue(null);
+	}
+
+	@WorkerThread
+	@RequiresApi(api = Build.VERSION_CODES.Q)
+	private void getIdsFromDocumentTree(ArrayList<String> mediaIDs, ArrayList<Uri> mediaUris, DocumentFile treeDocument) {
+		final DocumentFile[] childDocs = treeDocument.listFiles();
+
+		if (childDocs.length == 0)
+			// empty folder
+			return;
+
+		for (DocumentFile child : childDocs) {
+			if (child.isDirectory()) {
+				getIdsFromDocumentTree(mediaIDs, mediaUris, child);
+			} else if (musicMimes.contains(child.getType())) {
+				final Uri mediaUri;
+				final String id;
+				try {
+					mediaUri = MediaStore.getMediaUri(this, child.getUri());
+					mediaUris.add(mediaUri);
+					final String[] splitId = mediaUri.getPath().split("/");
+					id = splitId[splitId.length - 1];
+				} catch (IllegalArgumentException exception) {
+					continue;
+				}
+
+				// if ignored, we don't want this!
+				if (viewModel.songDatabaseDao.getIgnoredUris().contains(mediaUri.toString())) continue;
+				mediaIDs.add(id);
+			}
+		}
 	}
 
 
@@ -426,72 +494,25 @@ public class MainActivity extends AppCompatActivity{
 
 
 			// init the database
-			viewModel.songDatabase = musicDatabase.getInstance(this);
+			viewModel.songDatabase = musicDatabase.getInstance(getApplicationContext());
 			viewModel.songDatabaseDao = viewModel.songDatabase.musicDatabaseDao();
 
 			// ask for a folder if the Database is empty
-			viewModel.musicFilesList.addAll(viewModel.songDatabaseDao.getMusicTracks());
+			viewModel.musicDict.putAll(viewModel.songDatabaseDao.getMusicDict());
 			Handler albumArtHandler = new Handler(Looper.getMainLooper());
 			albumArtHandler.post(() -> {
 				// bekannte Cover Cachen
 			});
 
-			if (viewModel.musicFilesList.size() < viewModel.songDatabaseDao.getFolderUris().size()) {
+			if (viewModel.musicDict.size() < viewModel.songDatabaseDao.getFolderUris().size()) {
 				// load Library from database
 				for (String folder : viewModel.songDatabaseDao.getFolderUris()) {
-					DocumentFile folderDocument = DocumentFile.fromTreeUri(this, DocumentsContract.buildChildDocumentsUriUsingTree(Uri.parse(folder), DocumentsContract.getTreeDocumentId(Uri.parse(folder))));
-					if (folderDocument != null) addFolderToLibrary(folderDocument, true, true);
+					Uri treeUri = DocumentsContract.buildChildDocumentsUriUsingTree(Uri.parse(folder), DocumentsContract.getTreeDocumentId(Uri.parse(folder)));
+					if (treeUri != null) addFolderToLibrary(treeUri, true, true);
 				}
 			} else if (viewModel.songDatabaseDao.getFolderUris().size() == 0) {
 				openDirectory(null);
 			}
-
-			// move to fragment
-//			musicAdapter = new MusicAdapterFixedHeight(this, viewModel.musicFilesList, viewModel.songDatabaseDao);
-//			musicAdapter.setSongMenuActions(new SongMenuBottomSheetFragment.SongMenuActions() {
-//				@Override
-//				public void actionRemoveFromLibrary(int position) {
-//					removeFromLibrary(position);
-//				}
-//
-//				@Override
-//				public void actionAddToQueue(int position) {
-//					viewModel.queue.add(viewModel.currentTrackByPos + 1, musicAdapter.musicFiles.get(position));
-//					musicAdapterCurrentTrack.notifyItemInserted(viewModel.currentTrackByPos + 1);
-//					playerAlbumArtAdapter.notifyItemInserted(viewModel.currentTrackByPos + 1);
-//				}
-//
-//				@Override
-//				public void actionAddToPlaylist(int position) {
-//
-//				}
-//			});
-//
-//			playlistView.setAdapter(musicAdapter);
-//			playlistView.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));
-//
-//			int[] ATTRS = new int[]{android.R.attr.listDivider};
-//
-//			TypedArray val = obtainStyledAttributes(ATTRS);
-//			Drawable divider = val.getDrawable(0);
-//			val.recycle();
-//			int inset = getResources().getDimensionPixelSize(R.dimen.dividerInsetValue);
-//			InsetDrawable insetDivider = new InsetDrawable(divider, inset, 0, 0, 0);
-//
-//			DividerItemDecoration decoration = new DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
-//			decoration.setDrawable(insetDivider);
-//			playlistView.addItemDecoration(decoration);
-//
-//			SimpleSwipeController playlistSwipeController = new SimpleSwipeController(this) {
-//				@Override
-//				public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
-//					final int position = viewHolder.getAdapterPosition();
-//					removeFromLibrary(position);
-//				}
-//			};
-//
-//			ItemTouchHelper itemTouchHelper = new ItemTouchHelper(playlistSwipeController);
-//			itemTouchHelper.attachToRecyclerView(playlistView);
 
 
 			// init the listeners for the Seekbars
@@ -570,8 +591,7 @@ public class MainActivity extends AppCompatActivity{
 			};
 
 
-			viewModel.queue.addAll(viewModel.musicFilesList);
-			Collections.shuffle(viewModel.queue);
+			refreshQueue(null);
 
 
 			musicAdapterCurrentTrack = new MusicAdapter(this, viewModel.queue, viewModel.songDatabaseDao);
@@ -587,11 +607,10 @@ public class MainActivity extends AppCompatActivity{
 				@Override
 				public void onPageSelected(int position) {
 					if (playerCarousel.getCurrentItem() != position) playerCarousel.setCurrentItem(position, isPlayerVisible());
-					System.out.println(scrollTrackOnly);
 					if (position != viewModel.currentTrackByPos || scrollTrackOnly) {
 						viewModel.currentTrackByPos = position;
 						if (scrollTrackOnly) scrollTrackOnly = false;
-						else playSong(position, true);
+						else playSong(position); // intentional call
 					}
 				}
 
@@ -671,8 +690,17 @@ public class MainActivity extends AppCompatActivity{
 		}
 	}
 
+	private void refreshQueue(Playlist playlist) {
+		if (playlist == null) {
+			viewModel.queue.addAll(viewModel.musicDict.values());
+			if (shuffle) Collections.shuffle(viewModel.queue);
+		}
+		if (musicAdapterCurrentTrack != null) musicAdapterCurrentTrack.notifyDataSetChanged();
+		if (playerAlbumArtAdapter != null) playerAlbumArtAdapter.notifyDataSetChanged();
+	}
+
 	// playback related Methods
-	public void playSong(int position, boolean intentional) {
+	public void playSong(int position) {
 		// Clear all scroll animations
 		if (playerTitleAnim != null) {
 			playerTitleAnim.removeAllListeners();
@@ -689,20 +717,9 @@ public class MainActivity extends AppCompatActivity{
 			playerSongArtistAlbumInfo.setScrollX(0);
 		}
 
-		musicTrack item;
-		if (!intentional) {
-			item = viewModel.musicFilesList.get(position);
-			viewModel.currentTrackByPos = (viewModel.queue.size() == 0)? 0 : viewModel.currentTrackByPos + 1;
-			viewModel.queue.add(viewModel.currentTrackByPos, item);
-			musicAdapterCurrentTrack.notifyItemInserted(viewModel.currentTrackByPos);
-			playerAlbumArtAdapter.notifyItemInserted(viewModel.currentTrackByPos);
-			if (viewModel.queue.size() != 1) {
-				scrollTrackOnly = true;
-				currentTrackPager.setCurrentItem(viewModel.currentTrackByPos, true);
-			}
-		} else {
-			item = viewModel.queue.get(position);
-		}
+
+		musicTrack item = viewModel.queue.get(position);
+
 
 		songDuration = playMusicFile(item.getAbsPath());
 
@@ -722,10 +739,64 @@ public class MainActivity extends AppCompatActivity{
 			final Handler handler = new Handler(Looper.getMainLooper());
 			handler.post(() -> {
 				for (int i = 0; i < itemsToAdd; i++) {
-					viewModel.queue.add(viewModel.musicFilesList.get(ThreadLocalRandom.current().nextInt(0, viewModel.musicFilesList.size())));
+					viewModel.queue.add(viewModel.musicDict.get(new ArrayList<>(viewModel.musicDict.keySet()).get(ThreadLocalRandom.current().nextInt(viewModel.musicDict.size()))));
 				}
 				musicAdapterCurrentTrack.notifyItemRangeInserted(position+1, itemsToAdd);
 				playerAlbumArtAdapter.notifyItemRangeInserted(position+1, itemsToAdd);
+			});
+		}
+	}
+
+	public void playSong(long id) {
+		// Clear all scroll animations
+		if (playerTitleAnim != null) {
+			playerTitleAnim.removeAllListeners();
+			playerTitleAnim.cancel();
+			playerInfoAnim = null;
+			// reset the transformation
+			playerSongTitle.setScrollX(0);
+		}
+		if (playerInfoAnim != null) {
+			playerInfoAnim.removeAllListeners();
+			playerInfoAnim.cancel();
+			playerInfoAnim = null;
+			// reset the transformation
+			playerSongArtistAlbumInfo.setScrollX(0);
+		}
+
+		musicTrack item = viewModel.musicDict.get(id);
+		viewModel.currentTrackByPos = (viewModel.queue.size() == 0)? 0 : viewModel.currentTrackByPos + 1;
+		viewModel.queue.add(viewModel.currentTrackByPos, item);
+		musicAdapterCurrentTrack.notifyItemInserted(viewModel.currentTrackByPos);
+		playerAlbumArtAdapter.notifyItemInserted(viewModel.currentTrackByPos);
+		if (viewModel.queue.size() != 1) {
+			scrollTrackOnly = true;
+			currentTrackPager.setCurrentItem(viewModel.currentTrackByPos, true);
+		}
+
+
+		songDuration = playMusicFile(item.getAbsPath());
+
+		// update the Seekbars
+		seekBar.setProgress(0);
+		playerSeekBar.setValue(0f);
+		seekBar.setMax(songDuration);
+		playerSeekBar.setValueTo((float) songDuration + 1);
+		// add one, because player stops at songDuration + 1
+		updateSongInfo(item.getTitle(), item.getArtist(), item.getAlbum(), false);
+
+		setPlaying(true);
+
+
+		int itemsToAdd = Math.max(0, 4 - viewModel.queue.size() + viewModel.currentTrackByPos);
+		if (itemsToAdd != 0) {
+			final Handler handler = new Handler(Looper.getMainLooper());
+			handler.post(() -> {
+				for (int i = 0; i < itemsToAdd; i++) {
+					viewModel.queue.add(viewModel.musicDict.get(new ArrayList<>(viewModel.musicDict.keySet()).get(ThreadLocalRandom.current().nextInt(viewModel.musicDict.size()))));
+				}
+				musicAdapterCurrentTrack.notifyItemRangeInserted(viewModel.currentTrackByPos + 1, itemsToAdd);
+				playerAlbumArtAdapter.notifyItemRangeInserted(viewModel.currentTrackByPos + 1, itemsToAdd);
 			});
 		}
 	}
@@ -735,17 +806,18 @@ public class MainActivity extends AppCompatActivity{
 			mp.pause();
 			setPlaying(false);
 		} else if (!musicPlayerPrepared) {
-			if (viewModel.queue.size() != 0) playSong(viewModel.currentTrackByPos, true);
-			else playSong(ThreadLocalRandom.current().nextInt(0, viewModel.musicFilesList.size()), false);
+			if (viewModel.queue.size() != 0) playSong(viewModel.currentTrackByPos); // intentional call
+			else if (viewModel.musicDict.size() != 0) playSong(ThreadLocalRandom.current().nextInt(0, viewModel.musicDict.size())); // unintentional call
 		} else {
 			mp.start();
 			setPlaying(true);
 		}
 	}
 
+	// outdated
 	public void playFromView(View view) {
 		int position = ((RecyclerView) view.getParent()).getChildLayoutPosition(view) - 1;
-		playSong(position, false);
+		playSong(position); // unintentional call
 	}
 
 	public void openPlayer(View view) {
@@ -757,16 +829,28 @@ public class MainActivity extends AppCompatActivity{
 	}
 
 	public void prevSong(View view) {
-		if (isPlaying && songPosition >= 5000) playSong(viewModel.currentTrackByPos, true);
+		if (isPlaying && songPosition >= 5000) playSong(viewModel.currentTrackByPos); // intentional call
 		else currentTrackPager.setCurrentItem(Math.max(0, viewModel.currentTrackByPos - 1), true);
 	}
 
 	public void hidePlayer(View view) { bottomSheetPlayer.setState(BottomSheetBehavior.STATE_COLLAPSED); }
 
-	public void addToQueue(int position) {
-		viewModel.queue.add(viewModel.currentTrackByPos + 1, viewModel.musicFilesList.get(position));
+	public void addToQueue(long id) {
+		DialogFragmentAddedToQueue infoDialog = new DialogFragmentAddedToQueue();
+		infoDialog.show(getSupportFragmentManager(), infoDialog.getTag());
+
+		viewModel.queue.add(viewModel.currentTrackByPos + 1, viewModel.musicDict.get(id));
 		musicAdapterCurrentTrack.notifyItemInserted(viewModel.currentTrackByPos + 1);
 		playerAlbumArtAdapter.notifyItemInserted(viewModel.currentTrackByPos + 1);
+	}
+
+	public void addToQueue(ArrayList<Long> ids) {
+		viewModel.queue.addAll(viewModel.currentTrackByPos + 1, ids.stream().map(key -> viewModel.musicDict.get(key)).collect(Collectors.toList()));
+		musicAdapterCurrentTrack.notifyItemRangeInserted(viewModel.currentTrackByPos + 1, ids.size());
+		playerAlbumArtAdapter.notifyItemRangeInserted(viewModel.currentTrackByPos + 1, ids.size());
+
+		DialogFragmentAddedToQueue infoDialog = new DialogFragmentAddedToQueue();
+		infoDialog.show(getSupportFragmentManager(), infoDialog.getTag());
 	}
 
 
@@ -809,7 +893,7 @@ public class MainActivity extends AppCompatActivity{
 
 
 		final int titleTextWidth = (int) playerSongArtistAlbumInfo.getPaint().measureText(newTitle);
-		final int maxWidth = (int) findViewById(R.id.playerAlbumPlaceholder).getMeasuredWidth();
+		final int maxWidth = findViewById(R.id.playerAlbumPlaceholder).getMeasuredWidth();
 		if (titleTextWidth > maxWidth) {
 			playerTitleAnim = new AnimatorSet();
 			ObjectAnimator anim1 = ObjectAnimator.ofInt(playerSongTitle, "scrollX", 0, titleTextWidth);
@@ -871,7 +955,7 @@ public class MainActivity extends AppCompatActivity{
 
 	@Override
 	protected void onDestroy() {
-		viewModel.songDatabaseDao.updateTracks(viewModel.musicFilesList);
+		viewModel.songDatabaseDao.updateTracks(new ArrayList<>(viewModel.musicDict.values()));
 		super.onDestroy();
 	}
 
@@ -915,5 +999,26 @@ public class MainActivity extends AppCompatActivity{
 				if (isMusicPlayerInit) playerVolumeBar.setValue(currentVolume);
 			}
 		}
+	}
+
+	// method to create SQL Argument Placeholders
+	private String makePlaceholders(int len) {
+		StringBuilder sb = new StringBuilder(len * 2 - 1);
+		sb.append("?");
+		for (int i = 1; i < len; i++)
+			sb.append(",?");
+		return sb.toString();
+	}
+
+	@Override
+	public boolean onSupportNavigateUp() {
+		if (navController.getCurrentDestination().getId() == R.id.fragmentPlaylist) {
+			final FragmentPlaylist fragment = (FragmentPlaylist) getSupportFragmentManager().findFragmentById(R.id.fragmentPlaylist);
+
+			if (fragment != null) {
+				fragment.savePlaylistData();
+			}
+		}
+		return super.onSupportNavigateUp();
 	}
 }

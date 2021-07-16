@@ -22,7 +22,7 @@ public class Playlist implements Serializable {
 
 	@TypeConverters({Converters.class})
 	@ColumnInfo
-	public ArrayList<Integer> songs;
+	public ArrayList<Long> songs;
 
 	public Playlist(int id, String name, String description) {
 		this.id = id;

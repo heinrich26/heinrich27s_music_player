@@ -11,6 +11,7 @@
 		android:id="@+id/playlistListView"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
+		android:overScrollMode="always"
 		app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
 		tools:listitem="@layout/playlist_overview_item" />
 

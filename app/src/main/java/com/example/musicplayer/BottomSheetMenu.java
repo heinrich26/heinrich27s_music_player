@@ -15,19 +15,24 @@ import androidx.annotation.Nullable;
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
-public class SongMenuBottomSheetFragment extends BottomSheetDialogFragment {
+public class BottomSheetMenu extends BottomSheetDialogFragment {
 	private final byte[] albumArt;
-	private final String title;
-	private final String artist;
+	private final String title, artist;
+	private final long id;
 	private final int position;
-	private final SongMenuActions songMenuActions;
+	private final bottomSheetMenuAction[] menuActions;
 
-	SongMenuBottomSheetFragment(byte[] albumArt, String title, String artist, int position, SongMenuActions songMenuActions) {
+	protected static final int TYPE_SONG = 0;
+	protected static final int TYPE_PLAYLIST = 1;
+	// more types, like album etc.
+
+	BottomSheetMenu(byte[] albumArt, String title, String artist, long id, int position, bottomSheetMenuAction[] menuActions) {
 		this.albumArt = albumArt;
 		this.title = title;
 		this.artist = artist;
+		this.id = id;
 		this.position = position;
-		this.songMenuActions = songMenuActions;
+		this.menuActions = menuActions;
 	}
 
 	@Override
@@ -46,24 +51,22 @@ public class SongMenuBottomSheetFragment extends BottomSheetDialogFragment {
 		final TextView songInfo = layout.findViewById(R.id.songInfo);
 		final ImageView albumView = layout.findViewById(R.id.albumArt);
 
-		final LinearLayout remFromLib = layout.findViewById(R.id.actionRemoveFromLibrary);
-		final LinearLayout addToPL = layout.findViewById(R.id.actionAddToPlaylist);
-		final LinearLayout addToQueue = layout.findViewById(R.id.actionAddToQueue);
+		final LinearLayout actionHolder = layout.findViewById(R.id.action_holder);
 
-		remFromLib.setOnClickListener(v -> {
-			songMenuActions.actionRemoveFromLibrary(position);
-			dismiss();
-		});
+		int layoutPos = 1;
+		for (bottomSheetMenuAction action: menuActions) {
+			View item = inflater.inflate(R.layout.song_menu_item, actionHolder, false);
+			item.setOnClickListener(v -> {
+				action.action(position, id);
+				dismiss();
+			});
 
-		addToPL.setOnClickListener(v -> {
-			songMenuActions.actionAddToPlaylist(position);
-			dismiss();
-		});
+			((TextView) item.findViewById(R.id.menu_item_title)).setText(action.getName());
+			((ImageView) item.findViewById(R.id.menu_item_icon)).setImageResource(action.getIcon());
 
-		addToQueue.setOnClickListener(v -> {
-			songMenuActions.actionAddToQueue(position);
-			dismiss();
-		});
+			actionHolder.addView(item, layoutPos);
+			layoutPos ++;
+		}
 
 		songTitle.setText(title);
 
@@ -87,9 +90,10 @@ public class SongMenuBottomSheetFragment extends BottomSheetDialogFragment {
 		return super.onCreateDialog(savedInstanceState);
 	}
 
-	public interface SongMenuActions {
-		void actionRemoveFromLibrary(int position);
-		void actionAddToQueue(int position);
-		void actionAddToPlaylist(int position);
+	public interface bottomSheetMenuAction {
+		void action(int position, long id);
+
+		int getName();
+		int getIcon();
 	}
 }

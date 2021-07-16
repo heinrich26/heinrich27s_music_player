@@ -7,49 +7,51 @@
 	tools:context=".MainActivity">
 
 	<androidx.constraintlayout.widget.ConstraintLayout
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	android:id="@+id/rootLayout">
+		android:id="@+id/rootLayout"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:elevation="0dp">
 
-		<androidx.recyclerview.widget.RecyclerView
-			android:id="@+id/playlistView"
+		<androidx.fragment.app.FragmentContainerView
+			android:id="@+id/nav_host_fragment"
+			android:name="androidx.navigation.fragment.NavHostFragment"
 			android:layout_width="match_parent"
 			android:layout_height="0dp"
-			android:layout_marginBottom="75dp"
+			android:layout_marginBottom="72dp"
+			android:elevation="0dp"
+			app:defaultNavHost="true"
 			app:layout_constraintBottom_toBottomOf="@+id/bottomToolbar"
 			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintStart_toStartOf="parent"
 			app:layout_constraintTop_toBottomOf="@+id/main_appbar"
-			app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-			tools:listitem="@layout/music_item_fixed_size"
-			android:scrollbars="vertical" />
+			app:navGraph="@navigation/nav_graph" />
 
 		<SeekBar
 			android:id="@+id/seekBar"
 			android:layout_width="match_parent"
 			android:layout_height="18dp"
-			android:layout_marginBottom="62dp"
+			android:layout_marginBottom="61dp"
 			android:elevation="100dp"
 			android:paddingStart="8dp"
 			android:paddingEnd="8dp"
-			tools:progress="50"
 			android:progressTint="@color/seekbar_color"
 			android:thumbTint="@color/seekbar_color"
 			app:layout_constraintBottom_toBottomOf="parent"
 			app:layout_constraintEnd_toEndOf="parent"
-			app:layout_constraintStart_toStartOf="parent" />
+			app:layout_constraintStart_toStartOf="parent"
+			tools:progress="50" />
 
 		<com.google.android.material.appbar.MaterialToolbar
 			android:id="@+id/bottomToolbar"
 			android:layout_width="match_parent"
 			android:layout_height="72dp"
 			android:background="?android:attr/colorBackground"
-			android:elevation="8dp"
-			app:contentInsetLeft="0dp"
-			app:contentInsetStart="0dp"
-			app:contentInsetRight="0dp"
-			app:contentInsetEnd="0dp"
 			android:clipChildren="false"
+			android:elevation="8dp"
+			app:contentInsetEnd="0dp"
+			app:contentInsetLeft="0dp"
+			app:contentInsetRight="0dp"
+			app:contentInsetStart="0dp"
 			app:layout_constraintBottom_toBottomOf="parent"
 			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintStart_toStartOf="parent">
@@ -62,12 +64,12 @@
 					android:id="@+id/currentTrackPager"
 					android:layout_width="match_parent"
 					android:layout_height="72dp"
+					android:onClick="openPlayer"
+					android:orientation="horizontal"
 					app:layout_constraintBottom_toBottomOf="parent"
 					app:layout_constraintEnd_toEndOf="parent"
 					app:layout_constraintStart_toStartOf="parent"
-					app:layout_constraintTop_toTopOf="parent"
-					android:orientation="horizontal"
-					android:onClick="openPlayer"/>
+					app:layout_constraintTop_toTopOf="parent" />
 
 				<com.google.android.material.floatingactionbutton.FloatingActionButton
 					android:id="@+id/playPauseButton"
@@ -93,14 +95,14 @@
 		<com.google.android.material.appbar.MaterialToolbar
 			android:id="@+id/main_appbar"
 			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
+			android:layout_height="?attr/actionBarSize"
 			android:background="?attr/colorPrimary"
 			android:elevation="8dp"
-			android:minHeight="?attr/actionBarSize"
 			android:theme="?attr/actionBarTheme"
 			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintStart_toStartOf="parent"
-			app:layout_constraintTop_toTopOf="parent" />
+			app:layout_constraintTop_toTopOf="parent"
+			tools:title="@string/app_name" />
 
 	</androidx.constraintlayout.widget.ConstraintLayout>
 

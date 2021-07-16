@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	tools:context=".FragmentPlaylist">
+
+	<item android:id="@+id/action_add_to_playlist"
+		android:icon="@drawable/ic_add"
+		app:showAsAction="ifRoom"
+		android:title="@string/add_music"/>
+
+
+	<item android:id="@+id/action_start_edit_mode"
+		android:title="@string/edit_playlist"
+		app:showAsAction="always"
+		android:icon="@drawable/ic_edit"/>
+</menu>

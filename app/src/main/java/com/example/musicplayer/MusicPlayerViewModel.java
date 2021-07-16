@@ -9,6 +9,9 @@ import com.example.musicplayer.data.musicDatabase;
 import com.example.musicplayer.data.musicDatabaseDao;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MusicPlayerViewModel extends ViewModel {
 
@@ -33,12 +36,39 @@ public class MusicPlayerViewModel extends ViewModel {
 	public musicDatabase songDatabase;
 	public musicDatabaseDao songDatabaseDao;
 
-	public ArrayList<musicTrack> musicFilesList = new ArrayList<>();
+	public Map<Long, musicTrack> musicDict = Collections.synchronizedMap(new HashMap<>());
 
 	public ArrayList<musicTrack> queue = new ArrayList<>();
 
-	public SongMenuBottomSheetFragment.SongMenuActions songMenuActions;
-
-
 	public int currentTrackByPos;
+
+	private MutableLiveData<ArrayList<Long>> addSongsSelection;
+
+	public MutableLiveData<ArrayList<Long>> getAddSongsSelection() {
+		if (addSongsSelection == null) {
+			addSongsSelection = new MutableLiveData<>();
+			addSongsSelection.setValue(new ArrayList<>());
+		}
+		return addSongsSelection;
+	}
+
+	public void addSongToAddSelection(long id) {
+		getAddSongsSelection().getValue().add(id);
+		addSongsSelection.setValue(addSongsSelection.getValue());
+	}
+
+	public void removeSongFromAddSelection(long id) {
+		getAddSongsSelection().getValue().remove(id);
+		addSongsSelection.setValue(addSongsSelection.getValue());
+	}
+
+	private MutableLiveData<Boolean> inAddMode;
+
+	public MutableLiveData<Boolean> getInAddMode() {
+		if (inAddMode == null) {
+			inAddMode = new MutableLiveData<>();
+		}
+
+		return inAddMode;
+	}
 }

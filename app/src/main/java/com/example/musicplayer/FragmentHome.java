@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -13,37 +14,36 @@ public class FragmentHome extends Fragment {
 		super(R.layout.player_start_page);
 	}
 
-	private TextView toLibrary, toPlaylists, toArtists, toAlbums;
+	private TextView toArtists, toAlbums;
 	private MusicPlayerViewModel viewModel;
 	private MainActivity app;
+
+	private boolean inAddMode;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		viewModel = new ViewModelProvider(requireActivity()).get(MusicPlayerViewModel.class);
-		app = (MainActivity) getActivity();
+
+		inAddMode = (getActivity() instanceof AddTitlesActivity);
+
+		app = (inAddMode) ? (MainActivity) getActivity().getParent() : (MainActivity) getActivity();
 	}
 
 	@Override
-	public void onViewCreated(View view, Bundle savedInstanceState) {
+	public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		toLibrary = view.findViewById(R.id.action_to_library);
-		toLibrary.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				FragmentHomeDirections.ActionHomeToPlaylist action = FragmentHomeDirections.actionHomeToPlaylist();
-				action.setLibrary(true);
-				Navigation.findNavController(view).navigate(action);
-			}
+		final TextView toLibrary = view.findViewById(R.id.action_to_library);
+		toLibrary.setOnClickListener(v -> {
+			FragmentHomeDirections.ActionHomeToPlaylist action = FragmentHomeDirections.actionHomeToPlaylist();
+			action.setLibrary(true);
+			Navigation.findNavController(view).navigate(action);
+			v.setClickable(false);
 		});
-		toPlaylists = view.findViewById(R.id.action_to_playlists);
-		toPlaylists.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-//				FragmentHomeDirections. action = FragmentHomeDirections.actionHomeToPlaylistOverview();
-//				action.setLibrary(true);
-				Navigation.findNavController(view).navigate(FragmentHomeDirections.actionHomeToPlaylistOverview());
-			}
+		final TextView toPlaylists = view.findViewById(R.id.action_to_playlists);
+		toPlaylists.setOnClickListener(v -> {
+			Navigation.findNavController(view).navigate(FragmentHomeDirections.actionHomeToPlaylistOverview());
+			v.setClickable(false);
 		});
 	}
 }

@@ -3,16 +3,32 @@
 	<string name="app_name">Music Player</string>
 	<string name="unknown_album">Unbekanntes Album</string>
 	<string name="unknown_artist">Unbekannter Interpret</string>
+
+	<string name="done">Fertig</string>
+	<string name="delete">Löschen</string>
+	<string name="select">Auswählen</string>
 	<string name="cancel">Abbrechen</string>
-	<string name="remove_from_library">Aus Mediathek löschen</string>
-	<string name="add_to_playlist">Zu einer Playlist hinzufügen ...</string>
-	<string name="next_title">Nächster Titel</string>
-	<string name="library">Mediathek</string>
+
+	<string name="playlists">Playlists</string>
+	<string name="unnamed_playlist">Unbenannte Playlist</string>
 	<string name="playlist_description">Beschreibung</string>
 	<string name="playlist_name">Name der Playlist</string>
 	<string name="new_playlist">Neue Playlist</string>
+	<string name="add_to_playlist">Zu einer Playlist hinzufügen …</string>
+	<string name="library">Mediathek</string>
+	<string name="edit_playlist">Playlist bearbeiten</string>
+
+	<string name="remove_from_library">Aus Mediathek löschen</string>
+	<string name="next_title">Nächster Titel</string>
 	<string name="add_music">Musik hinzufügen</string>
-	<string name="done">Fertig</string>
-	<string name="playlists">Playlists</string>
-	<string name="unnamed_playlist">Unbenannte Playlist</string>
+	<string name="added_to_queue">Zur Warteliste hinzugefügt</string>
+	<string name="added_to_queue_extra">Das wird als Nächstes gespielt.</string>
+	<string name="select_song">Musik auswählen</string>
+
+	<string name="addTitlesToPlaylist">Titel hinzufügen zu \"%1$s\".</string>
+	<plurals name="titlesAddedToPlaylist">
+		<item quantity="one">%d Titel hinzugefügt zu \"%2$s\"</item>
+		<item quantity="other">%d Titel hinzugefügt zu \"%2$s\"</item>
+	</plurals>
+	<string name="remove_from_playlist">Aus Playlist löschen</string>
 </resources>

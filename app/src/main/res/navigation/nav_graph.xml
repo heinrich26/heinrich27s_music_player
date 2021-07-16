@@ -8,14 +8,19 @@
 	<fragment
 		android:id="@+id/fragmentHome"
 		android:name="com.example.musicplayer.FragmentHome"
-		android:label="@string/app_name">
+		android:label="@string/app_name"
+		tools:layout="@layout/player_start_page">
 		<action
 			android:id="@+id/actionHomeToPlaylist"
 			app:destination="@id/fragmentPlaylist"
 			app:enterAnim="@anim/from_right"
 			app:exitAnim="@anim/to_left"
 			app:popEnterAnim="@anim/from_left"
-			app:popExitAnim="@anim/to_right" />
+			app:popExitAnim="@anim/to_right" >
+			<argument
+				android:name="library"
+				android:defaultValue="true" />
+		</action>
 		<action
 			android:id="@+id/actionHomeToPlaylistOverview"
 			app:destination="@id/fragmentPlaylistOverview"
@@ -27,7 +32,8 @@
 	<fragment
 		android:id="@+id/fragmentPlaylist"
 		android:name="com.example.musicplayer.FragmentPlaylist"
-		android:label="@string/library" >
+		android:label="@string/library"
+		tools:layout="@layout/playlist_layout">
 		<argument
 			android:name="playlist"
 			app:argType="com.example.musicplayer.data.Playlist"
@@ -37,11 +43,16 @@
 			android:name="library"
 			app:argType="boolean"
 			android:defaultValue="false" />
+		<argument
+			android:name="createNew"
+			app:argType="boolean"
+			android:defaultValue="false" />
 	</fragment>
 	<fragment
 		android:id="@+id/fragmentPlaylistOverview"
 		android:name="com.example.musicplayer.FragmentPlaylistOverview"
-		android:label="">
+		android:label="@string/playlists"
+		tools:layout="@layout/playlist_overview_layout">
 		<action
 			android:id="@+id/actionPlaylistOverviewToPlaylist"
 			app:destination="@id/fragmentPlaylist"
@@ -50,4 +61,5 @@
 			app:popEnterAnim="@anim/from_left"
 			app:popExitAnim="@anim/to_right" />
 	</fragment>
+
 </navigation>

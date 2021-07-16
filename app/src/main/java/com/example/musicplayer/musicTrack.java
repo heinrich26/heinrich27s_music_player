@@ -3,14 +3,18 @@ package com.example.musicplayer;
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 import java.io.Serializable;
 
-@Entity(tableName = "trackList")
+@Entity(tableName = "trackList", indices = {@Index(value = {"path"}, unique = true)})
 public class musicTrack implements Serializable {
 	@NonNull
-	@PrimaryKey
+	@PrimaryKey(autoGenerate = true)
+	@ColumnInfo(name = "SongId")
+	public long id;
+
 	@ColumnInfo(name = "path")
 	public String path;
 
@@ -35,7 +39,8 @@ public class musicTrack implements Serializable {
 	@ColumnInfo
 	public boolean testedForCover;
 
-	public musicTrack(@NonNull String path, String title, String artist, String album, int duration, String absPath, boolean hasCover, boolean testedForCover) {
+	public musicTrack(@NonNull long id, @NonNull String path, String title, String artist, String album, int duration, String absPath, boolean hasCover, boolean testedForCover) {
+		this.id = id;
 		this.path = path;
 		this.title = title;
 		this.artist = artist;

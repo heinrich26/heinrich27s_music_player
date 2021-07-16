@@ -8,6 +8,7 @@ import androidx.room.Update;
 
 import com.example.musicplayer.musicTrack;
 
+import java.util.HashMap;
 import java.util.List;
 
 import static androidx.room.OnConflictStrategy.IGNORE;
@@ -25,14 +26,29 @@ public interface musicDatabaseDao {
 	List<String> getIgnoredUris();
 
 	// returns the musicTrack instances
-	@Query("Select * from trackList")
+	@Query("Select * from trackList order by title ASC")
 	List<musicTrack> getMusicTracks();
+
+	default HashMap<Long, musicTrack> getMusicDict() {
+		HashMap<Long, musicTrack> map = new HashMap<>();
+		for (musicTrack track : getMusicTracks()) {
+			if (map.put(track.id, track) != null) {
+				throw new IllegalStateException("Duplicate key");
+			}
+		}
+		return map;
+	}
 
 	@Query("Select * from trackList WHERE hasCover")
 	List<musicTrack> getTracksWithCover();
 
-	@Query("Select * from playlists")
+	@Query("Select * from trackList WHERE SongId=:id")
+	musicTrack getTrack(long id);
+
+
+	@Query("Select * from playlists order by name")
 	List<Playlist> getPlaylists();
+
 
 	// Tracks
 	@Insert(onConflict = IGNORE, entity = musicTrack.class)

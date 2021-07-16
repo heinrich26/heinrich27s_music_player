@@ -6,25 +6,30 @@
 	android:id="@+id/PlaylistItem"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	android:background="?attr/selectableItemBackground">
+	android:background="?attr/selectableItemBackground"
+	app:layout_constraintBottom_toBottomOf="parent"
+	app:layout_constraintEnd_toEndOf="parent"
+	app:layout_constraintStart_toStartOf="parent"
+	app:layout_constraintTop_toTopOf="parent"
+	tools:layout_height="72dp">
 
 	<com.google.android.material.card.MaterialCardView
 		android:id="@+id/playlistCoverCard"
 		android:layout_width="60dp"
 		android:layout_height="60dp"
 		android:layout_marginStart="6dp"
+		android:clipChildren="true"
+		app:cardCornerRadius="6dp"
+		app:cardElevation="4dp"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
-		app:layout_constraintTop_toTopOf="parent"
-		app:cardElevation="4dp"
-		android:clipChildren="true"
-		app:cardCornerRadius="6dp">
+		app:layout_constraintTop_toTopOf="parent">
 
 		<ImageView
+			android:id="@+id/albumCover"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:id="@+id/albumCover"
-			android:background="@drawable/ic_note_twocolor"/>
+			android:background="@drawable/ic_note_twocolor" />
 
 	</com.google.android.material.card.MaterialCardView>
 
@@ -32,43 +37,62 @@
 		android:id="@+id/songTitle"
 		android:layout_width="0dp"
 		android:layout_height="0dp"
-		android:layout_marginStart="8dp"
-		android:layout_marginEnd="8dp"
-		android:gravity="center_vertical"
+		android:layout_marginHorizontal="8dp"
 
+		android:ellipsize="none"
+		android:gravity="center_vertical"
+		android:requiresFadingEdge="horizontal"
 		android:singleLine="true"
-		android:ellipsize="marquee"
-		android:marqueeRepeatLimit="marquee_forever"
-		android:focusable="true"
-		android:focusableInTouchMode="true"
-		android:scrollHorizontally="true"
 
 		android:textAppearance="@style/TextAppearance.AppCompat.Body1"
 		android:textSize="24sp"
 		app:layout_constraintBottom_toTopOf="@+id/subtextInfo"
-		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintEnd_toStartOf="@+id/dragHandle"
 		app:layout_constraintStart_toEndOf="@+id/playlistCoverCard"
 		app:layout_constraintTop_toTopOf="parent"
-		tools:text="@tools:sample/lorem/random" />
+		tools:text="Song Title" />
 
 	<TextView
 		android:id="@+id/subtextInfo"
 		android:layout_width="0dp"
 		android:layout_height="0dp"
-		android:layout_marginStart="8dp"
-		android:layout_marginEnd="8dp"
+		android:layout_marginHorizontal="8dp"
 
+		android:ellipsize="none"
+		android:requiresFadingEdge="horizontal"
 		android:singleLine="true"
-		android:ellipsize="marquee"
-		android:marqueeRepeatLimit ="marquee_forever"
-		android:focusable="true"
-		android:focusableInTouchMode="true"
-		android:scrollHorizontally="true"
 
 		android:textSize="20sp"
 		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintEnd_toStartOf="@+id/dragHandle"
 		app:layout_constraintStart_toEndOf="@+id/playlistCoverCard"
-		app:layout_constraintTop_toBottomOf="@+id/songTitle" />
+		app:layout_constraintTop_toBottomOf="@+id/songTitle"
+		tools:text="Song Artist * Album" />
+
+	<ImageView
+		android:id="@+id/dragHandle"
+		android:layout_width="44dp"
+		android:layout_height="44dp"
+		android:padding="8dp"
+		android:src="@drawable/ic_drag_handle"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toStartOf="@+id/checkBox"
+		app:layout_constraintTop_toTopOf="parent"
+		android:visibility="gone"
+		tools:visibility="visible"
+		android:focusable="true"
+		android:clickable="true"/>
+
+	<androidx.appcompat.widget.AppCompatCheckBox
+		android:id="@+id/checkBox"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:buttonTint="@color/checkbox_colors"
+		android:visibility="gone"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintTop_toTopOf="parent"
+		tools:visibility="visible" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

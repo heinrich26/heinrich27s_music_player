@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase;
 
 import com.example.musicplayer.musicTrack;
 
-@Database(entities = {folderRef.class, ignores.class, musicTrack.class, Playlist.class}, exportSchema = false, version = 12)
+@Database(entities = {folderRef.class, ignores.class, musicTrack.class, Playlist.class}, exportSchema = false, version = 31)
 public abstract class musicDatabase extends RoomDatabase {
 	private static final String DB_NAME = "music_db";
 	private static volatile musicDatabase instance;
