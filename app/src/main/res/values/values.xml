@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 	<dimen name="dividerInsetValue">80dp</dimen>
+
+	<!--music item dimens-->
 	<dimen name="musicItemHeight">72dp</dimen>
 	<dimen name="musicItemDrawableMargin">16dp</dimen>
 	<dimen name="musicItemSwipeTextSize">16sp</dimen>
+	<dimen name="music_item_drag_elevation">8dp</dimen>
+	<dimen name="music_item_drag_radius">6dp</dimen>
 </resources>

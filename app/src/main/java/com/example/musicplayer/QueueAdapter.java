@@ -1,23 +1,22 @@
 package com.example.musicplayer;
 
-import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
-import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -25,12 +24,14 @@ import com.example.musicplayer.data.musicDatabaseDao;
 
 import java.util.ArrayList;
 
-public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.musicViewHolder> {
+public class QueueAdapter extends RecyclerView.Adapter<QueueAdapter.musicViewHolder> {
 
 	public final Context parentContext;
-	public final ArrayList<musicTrack> musicFiles;
+	public final ArrayList<Long> musicIds;
 	private ItemClickListener clickListener;
 	private final musicDatabaseDao songDao;
+	private final MusicPlayerViewModel viewModel;
+	private final int maxTextWidth;
 
 	public byte[] getAlbumArt(String uri) {
 		MediaMetadataRetriever retriever = new MediaMetadataRetriever();
@@ -40,10 +41,19 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.musicViewHol
 		return art;
 	}
 
-	MusicAdapter(Context parentContext, ArrayList<musicTrack> musicFiles, musicDatabaseDao songDao) {
-		this.musicFiles = musicFiles;
+	QueueAdapter(Context parentContext, ArrayList<Long> musicIds, musicDatabaseDao songDao) {
+		this.musicIds = musicIds;
 		this.parentContext = parentContext;
 		this.songDao = songDao;
+
+		viewModel = new ViewModelProvider((ViewModelStoreOwner) parentContext).get(MusicPlayerViewModel.class);
+
+		maxTextWidth = ((Activity) parentContext).getWindowManager().getCurrentWindowMetrics().getBounds().height() - parentContext.getResources().getDimensionPixelSize(R.dimen.musicItemHeight);
+	}
+
+	@Override
+	public long getItemId(int position) {
+		return musicIds.get(position);
 	}
 
 	@NonNull
@@ -53,20 +63,19 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.musicViewHol
 		return new musicViewHolder(view);
 	}
 
-	@SuppressLint("SetTextI18n")
+
 	@Override
 	public void onBindViewHolder(@NonNull musicViewHolder holder, int position) {
+		final musicTrack track = viewModel.musicDict.get(getItemId(position));
 
-		final musicTrack track = musicFiles.get(position);
+		if (track == null) return;
 
-		holder.songTitle.setText(track.getTitle());
 		// put the Dot in the middle of the texts and add the values
-		String artist = track.getArtist();
-		String album = track.getAlbum();
+		final String artist = track.getArtist();
+		final String album = track.getAlbum();
 		final String infoText = ((artist == null) ? parentContext.getString(R.string.unknown_artist) : artist) + " \u2022 " + ((album == null) ? parentContext.getString(R.string.unknown_album) : album);
-		holder.subtextInfo.setText(infoText);
-		animateTextView(holder.subtextInfo);
 
+		holder.updateText(track.getTitle(), infoText);
 
 
 		// setup the Album Cover
@@ -96,7 +105,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.musicViewHol
 
 	@Override
 	public int getItemCount() {
-		return musicFiles.size();
+		return musicIds.size();
 	}
 
 	void setClickListener(ItemClickListener itemClickListener) {
@@ -124,42 +133,42 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.musicViewHol
 		public void onClick(View view) {
 			if (clickListener != null) clickListener.onItemClick(view, getAdapterPosition());
 		}
-	}
 
-	private void animateTextView(TextView mTextView) {
-		int textWidth = getTextViewWidth(mTextView);
-		int displayWidth = getDisplayWidth(parentContext);
+		public void updateText(String title, String info) {
+			songTitle.setText(title);
+			subtextInfo.setText(info);
 
-		/* Start animation only when text is longer than display width. */
-		if(displayWidth<=textWidth) {
-			Animation mAnimation = new TranslateAnimation(
-					0, -textWidth,
-					0, 0);
-			mAnimation.setDuration(10000);    // Set custom duration.
-			mAnimation.setStartOffset(1000);    // Set custom offset.
-			mAnimation.setRepeatMode(Animation.RESTART);    // This will animate text back after it reaches end.
-			mAnimation.setRepeatCount(Animation.INFINITE);    // Infinite animation.
 
-			mTextView.startAnimation(mAnimation);
+			final int titleWidth = getViewWidth(songTitle);
+			final int infoWidth = getViewWidth(subtextInfo);
+
+			if (maxTextWidth < titleWidth) {
+				Animation mAnimation = new TranslateAnimation(
+						0, -titleWidth,
+						0, 0);
+				mAnimation.setDuration(10000);    // Set custom duration.
+				mAnimation.setStartOffset(1000);    // Set custom offset.
+				mAnimation.setRepeatMode(Animation.RESTART);    // This will animate text back after it reaches end.
+				mAnimation.setRepeatCount(Animation.INFINITE);    // Infinite animation.
+
+				songTitle.startAnimation(mAnimation);
+			}
+			if (maxTextWidth < infoWidth) {
+				Animation mAnimation = new TranslateAnimation(
+						0, -infoWidth,
+						0, 0);
+				mAnimation.setDuration(10000);    // Set custom duration.
+				mAnimation.setStartOffset(1000);    // Set custom offset.
+				mAnimation.setRepeatMode(Animation.RESTART);    // This will animate text back after it reaches end.
+				mAnimation.setRepeatCount(Animation.INFINITE);    // Infinite animation.
+
+				subtextInfo.startAnimation(mAnimation);
+			}
 		}
 	}
 
-	private int getDisplayWidth(Context context) {
-		int displayWidth;
-
-		WindowManager windowManager = (WindowManager)context.getSystemService(
-				Context.WINDOW_SERVICE);
-		Display display = windowManager.getDefaultDisplay();
-		Point screenSize = new Point();
-
-		display.getSize(screenSize);
-		displayWidth = screenSize.x;
-
-		return displayWidth;
-	}
-
-	private int getTextViewWidth(TextView textView) {
-		textView.measure(0, 0);    // Need to set measure to (0, 0).
-		return textView.getMeasuredWidth();
+	private int getViewWidth(View view) {
+		view.measure(0, 0);    // Need to set measure to (0, 0).
+		return view.getMeasuredWidth();
 	}
 }

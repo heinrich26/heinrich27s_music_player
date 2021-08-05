@@ -1,6 +1,5 @@
 package com.example.musicplayer;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
@@ -12,6 +11,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -22,8 +23,9 @@ import java.util.ArrayList;
 public class AlbumArtAdapter extends RecyclerView.Adapter<AlbumArtAdapter.musicViewHolder> {
 
 	public final Context parentContext;
-	public final ArrayList<musicTrack> musicFiles;
+	public final ArrayList<Long> musicIds;
 	private final musicDatabaseDao songDao;
+	private final MusicPlayerViewModel viewModel;
 
 
 	// old method to extract art from MP3
@@ -35,10 +37,12 @@ public class AlbumArtAdapter extends RecyclerView.Adapter<AlbumArtAdapter.musicV
 		return art;
 	}
 
-	AlbumArtAdapter(Context parentContext, ArrayList<musicTrack> musicFiles, musicDatabaseDao songDao) {
-		this.musicFiles = musicFiles;
+	AlbumArtAdapter(Context parentContext, ArrayList<Long> musicIds, musicDatabaseDao songDao) {
+		this.musicIds = musicIds;
 		this.parentContext = parentContext;
 		this.songDao = songDao;
+
+		viewModel = new ViewModelProvider((ViewModelStoreOwner) parentContext).get(MusicPlayerViewModel.class);
 	}
 
 	@NonNull
@@ -50,13 +54,17 @@ public class AlbumArtAdapter extends RecyclerView.Adapter<AlbumArtAdapter.musicV
 		return new musicViewHolder(view);
 	}
 
-	@SuppressLint("SetTextI18n")
+	@Override
+	public long getItemId(int position) {
+		return musicIds.get(position);
+	}
+
 	@Override
 	public void onBindViewHolder(@NonNull musicViewHolder holder, int position) {
 
 		((ViewGroup) holder.itemView).setClipChildren(false);
 
-		final musicTrack track = musicFiles.get(position);
+		final musicTrack track = viewModel.musicDict.get(getItemId(position));
 
 		if (track.hasCover || ! track.testedForCover()) {
 			// should load it on another Thread
@@ -84,7 +92,7 @@ public class AlbumArtAdapter extends RecyclerView.Adapter<AlbumArtAdapter.musicV
 
 	@Override
 	public int getItemCount() {
-		return musicFiles.size();
+		return musicIds.size();
 	}
 
 	public static class musicViewHolder extends RecyclerView.ViewHolder  {

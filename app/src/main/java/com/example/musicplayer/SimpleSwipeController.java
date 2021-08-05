@@ -23,11 +23,9 @@ import androidx.recyclerview.widget.RecyclerView;
 public abstract class SimpleSwipeController extends ItemTouchHelper.Callback {
 
 	Context mContext;
-	private final Paint mClearPaint = new Paint();
 	private final ColorDrawable deleteBackground = new ColorDrawable(), addQueueBackground = new ColorDrawable();
 	private final Drawable deleteDrawable, addQueueDrawable;
 	private final int iconMargin, decreasedMargin, itemHeight;
-	private final float dragIncrement;
 
 	public void setSwipeEnabled(boolean enabled) {
 		this.swipeEnabled = enabled;
@@ -47,13 +45,12 @@ public abstract class SimpleSwipeController extends ItemTouchHelper.Callback {
 		assert addQueueDrawable != null;
 		addQueueDrawable.setTint(Color.WHITE);
 
+		Paint mClearPaint = new Paint();
 		mClearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
 		iconMargin = context.getResources().getDimensionPixelSize(R.dimen.musicItemDrawableMargin);
 		decreasedMargin = 2 * iconMargin / 3;
 
 		DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
-
-		dragIncrement = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6f, metrics);
 
 		itemHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 72f, metrics);
 	}
@@ -61,7 +58,7 @@ public abstract class SimpleSwipeController extends ItemTouchHelper.Callback {
 
 	@Override
 	public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-		if (!(viewHolder instanceof MusicAdapterFixedHeight.musicViewHolder)) return makeMovementFlags(0,0);
+		if (!(viewHolder instanceof MusicItemAdapter.musicViewHolder)) return makeMovementFlags(0,0);
 		return makeMovementFlags(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT);
 	}
 
@@ -75,11 +72,9 @@ public abstract class SimpleSwipeController extends ItemTouchHelper.Callback {
 		super.onSelectedChanged(viewHolder, actionState);
 
 		if (viewHolder != null && actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
-			viewHolder.itemView.setElevation(dragIncrement);
-			final CardView card = ((MusicAdapterFixedHeight.musicViewHolder) viewHolder).trackHolder;
-			card.setPressed(true);
-			card.setCardElevation(dragIncrement);
-			card.setRadius(dragIncrement);
+			MusicItemAdapter.musicViewHolder holder = (MusicItemAdapter.musicViewHolder) viewHolder;
+			holder.trackHolder.setElevation(0f);
+			holder.trackHolder.setRadius(0f);
 		}
 	}
 
@@ -87,11 +82,10 @@ public abstract class SimpleSwipeController extends ItemTouchHelper.Callback {
 	public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
 		super.clearView(recyclerView, viewHolder);
 
-		viewHolder.itemView.setElevation(0f);
-		final CardView card = ((MusicAdapterFixedHeight.musicViewHolder) viewHolder).trackHolder;
-		card.setPressed(false);
-		card.setCardElevation(0f);
-		card.setRadius(0f);
+		MusicItemAdapter.musicViewHolder holder = (MusicItemAdapter.musicViewHolder) viewHolder;
+		holder.trackHolder.setElevation(0f);
+		holder.trackHolder.setRadius(0f);
+		holder.trackHolder.setPressed(false);
 	}
 
 	@Override
@@ -110,7 +104,7 @@ public abstract class SimpleSwipeController extends ItemTouchHelper.Callback {
 	public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView,
 							@NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY,
 							int actionState, boolean isCurrentlyActive) {
-		if (!(viewHolder instanceof MusicAdapterFixedHeight.musicViewHolder)) return;
+		if (!(viewHolder instanceof MusicItemAdapter.musicViewHolder)) return;
 
 		View itemView = viewHolder.itemView;
 		final int itemTop = itemView.getBottom() - itemHeight;
@@ -148,7 +142,7 @@ public abstract class SimpleSwipeController extends ItemTouchHelper.Callback {
 
 		super.onChildDraw(c, recyclerView, viewHolder, 0, dY, actionState, isCurrentlyActive);
 
-		((MusicAdapterFixedHeight.musicViewHolder) viewHolder).trackHolder.setTranslationX(dX);
+		((MusicItemAdapter.musicViewHolder) viewHolder).trackHolder.setTranslationX(dX);
 	}
 
 	@Override

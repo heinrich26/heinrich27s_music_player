@@ -31,4 +31,7 @@
 		<item quantity="other">%d Titel hinzugefügt zu \"%2$s\"</item>
 	</plurals>
 	<string name="remove_from_playlist">Aus Playlist löschen</string>
+	<string name="album_art">Titelbild</string>
+	<string name="toggle_play_pause">Umschalten: Play / Pause</string>
+	<string name="toggle_shuffle">Umschalten: Zufallswiedergabe</string>
 </resources>

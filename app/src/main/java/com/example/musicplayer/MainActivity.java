@@ -28,9 +28,9 @@ import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.LinearInterpolator;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -40,6 +40,7 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AppCompatActivity;
@@ -67,8 +68,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -102,7 +103,7 @@ public class MainActivity extends AppCompatActivity{
 					}
 			});
 
-	@SuppressWarnings("deprecation")
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -126,16 +127,11 @@ public class MainActivity extends AppCompatActivity{
 		currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 
 
-		Window window = getWindow();
-
-		// clear FLAG_TRANSLUCENT_STATUS flag:
-		window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-
 		// add FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS flag to the window
-		window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
 
 
-		getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true, new VolumeContentObserver((Build.VERSION.SDK_INT >= 28) ? new Handler(Looper.myLooper()) : new Handler()));
+		getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true, new VolumeContentObserver(new Handler(Looper.myLooper())));
 	}
 
 	@Override
@@ -360,7 +356,7 @@ public class MainActivity extends AppCompatActivity{
 
 	private BottomSheetBehavior<ConstraintLayout> bottomSheetPlayer;
 
-	private MusicAdapter musicAdapterCurrentTrack;
+	private QueueAdapter musicAdapterCurrentTrack;
 	private AlbumArtAdapter playerAlbumArtAdapter;
 	private ViewPager2 currentTrackPager, playerCarousel;
 	private boolean scrollTrackOnly = false;
@@ -594,7 +590,7 @@ public class MainActivity extends AppCompatActivity{
 			refreshQueue(null);
 
 
-			musicAdapterCurrentTrack = new MusicAdapter(this, viewModel.queue, viewModel.songDatabaseDao);
+			musicAdapterCurrentTrack = new QueueAdapter(this, viewModel.queue, viewModel.songDatabaseDao);
 			musicAdapterCurrentTrack.setClickListener((view, position) -> openPlayer(view));
 			currentTrackPager.setAdapter(musicAdapterCurrentTrack);
 
@@ -646,9 +642,10 @@ public class MainActivity extends AppCompatActivity{
 			playerCarousel.setClipToOutline(false);
 			playerCarousel.setClipChildren(false);
 			playerCarousel.setOffscreenPageLimit(2);
-			final View carouselFrame = playerCarousel.getChildAt(0);
+			final ViewGroup carouselFrame = (ViewGroup) playerCarousel.getChildAt(0);
 			carouselFrame.setOverScrollMode(RecyclerView.OVER_SCROLL_NEVER);
 			carouselFrame.setDuplicateParentStateEnabled(true);
+			carouselFrame.setClipChildren(false);
 			playerCarousel.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
 				@Override
 				public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {}
@@ -671,7 +668,6 @@ public class MainActivity extends AppCompatActivity{
 
 			playerCarousel.setPageTransformer(pageTransformer);
 
-			((ViewGroup) playerCarousel.getChildAt(0)).setClipChildren(false);
 
 			// start thread after player is there
 			currentUpdaterThread.start();
@@ -680,7 +676,8 @@ public class MainActivity extends AppCompatActivity{
 			final Handler trackUpdater = new Handler(Looper.getMainLooper());
 			trackUpdater.post(() -> {
 				try {
-					final musicTrack track = viewModel.queue.get(viewModel.currentTrackByPos);
+					final musicTrack track = viewModel.musicDict.get(viewModel.queue.get(viewModel.currentTrackByPos));
+					if (track == null) return;
 					updateSongInfo(track.getTitle(), track.getArtist(), track.getAlbum(), true);
 				} catch (Exception ignored) {}
 			});
@@ -690,16 +687,90 @@ public class MainActivity extends AppCompatActivity{
 		}
 	}
 
-	private void refreshQueue(Playlist playlist) {
+	private void refreshQueue(@Nullable Playlist playlist) {
+		if ((playlist == null && viewModel.musicDict.size() == 0) || (playlist != null && playlist.songs.size() == 0)) return;
+
+		viewModel.queue.clear();
 		if (playlist == null) {
-			viewModel.queue.addAll(viewModel.musicDict.values());
+			viewModel.queue.addAll(viewModel.musicDict.keySet());
 			if (shuffle) Collections.shuffle(viewModel.queue);
+		} else if (playlist.songs.size() > 0) {
+			viewModel.queue.addAll(playlist.songs);
 		}
 		if (musicAdapterCurrentTrack != null) musicAdapterCurrentTrack.notifyDataSetChanged();
 		if (playerAlbumArtAdapter != null) playerAlbumArtAdapter.notifyDataSetChanged();
 	}
 
-	// playback related Methods
+	private void refreshQueue(@Nullable Playlist playlist, boolean shuffle) {
+		this.shuffle = shuffle;
+		if ((playlist == null && viewModel.musicDict.size() == 0) || (playlist != null && playlist.songs.size() == 0)) return;
+
+		viewModel.queue.clear();
+		if (playlist == null) {
+			viewModel.queue.addAll(viewModel.musicDict.keySet());
+		} else {
+			viewModel.queue.addAll(playlist.songs);
+		}
+		if (shuffle) Collections.shuffle(viewModel.queue);
+		if (musicAdapterCurrentTrack != null) musicAdapterCurrentTrack.notifyDataSetChanged();
+		if (playerAlbumArtAdapter != null) playerAlbumArtAdapter.notifyDataSetChanged();
+	}
+
+	/**
+	 * Plays the given Playlist, starting at <b>first</b>. Additionally whether to shuffle must be defined as well!
+	 *
+	 * @param playlist Playlist to play
+	 * @param shuffle Whether to Shuffle
+	 * @param first First Song to play
+	 */
+	public void refreshQueue(final @Nullable Playlist playlist, final boolean shuffle, int first) {
+		this.shuffle = shuffle;
+		if (playlist == null) return;
+
+		if (shuffle && first == -1) first = ThreadLocalRandom.current().nextInt(playlist.songs.size());
+
+		if (viewModel.queue.size() != 0) {
+			// remove all items before the current
+			// TODO keep recently played songs for playback!
+			if (viewModel.currentTrackByPos > 0) {
+				viewModel.queue.subList(0, viewModel.currentTrackByPos).clear();
+				if (musicAdapterCurrentTrack != null) musicAdapterCurrentTrack.notifyItemRangeRemoved(0, viewModel.currentTrackByPos);
+				if (playerAlbumArtAdapter != null) playerAlbumArtAdapter.notifyItemRangeRemoved(0, viewModel.currentTrackByPos);
+				viewModel.currentTrackByPos = 0;
+			}
+
+			final int removedItems = viewModel.queue.size() - 1;
+			viewModel.queue.subList(1, viewModel.queue.size()).clear();
+			if (musicAdapterCurrentTrack != null) musicAdapterCurrentTrack.notifyItemRangeRemoved(1, removedItems);
+			if (playerAlbumArtAdapter != null) playerAlbumArtAdapter.notifyItemRangeRemoved(1, removedItems);
+		}
+
+
+		final List<Long> songs = new ArrayList<>((shuffle) ? playlist.songs : playlist.songs.subList(first, playlist.songs.size()));
+		if (shuffle) {
+			final Long firstItem = songs.remove(first);
+			Collections.shuffle(songs);
+			songs.add(0, firstItem);
+		}
+		viewModel.queue.addAll(songs);
+
+		if (musicAdapterCurrentTrack != null) musicAdapterCurrentTrack.notifyItemRangeInserted(1, songs.size());
+		if (playerAlbumArtAdapter != null) playerAlbumArtAdapter.notifyItemRangeInserted(1, songs.size());
+
+		playSong(1);
+
+		viewModel.queue.remove(0);
+		if(musicAdapterCurrentTrack != null) musicAdapterCurrentTrack.notifyItemRemoved(0);
+		if (playerAlbumArtAdapter != null) playerAlbumArtAdapter.notifyItemRemoved(0);
+
+		viewModel.currentTrackByPos = 0;
+	}
+
+	/**
+	 * Plays the Song at the corresponding Queue position
+	 *
+	 * @param position Queue position to play
+	 */
 	public void playSong(int position) {
 		// Clear all scroll animations
 		if (playerTitleAnim != null) {
@@ -718,7 +789,7 @@ public class MainActivity extends AppCompatActivity{
 		}
 
 
-		musicTrack item = viewModel.queue.get(position);
+		musicTrack item = viewModel.musicDict.get(viewModel.queue.get(position));
 
 
 		songDuration = playMusicFile(item.getAbsPath());
@@ -739,7 +810,7 @@ public class MainActivity extends AppCompatActivity{
 			final Handler handler = new Handler(Looper.getMainLooper());
 			handler.post(() -> {
 				for (int i = 0; i < itemsToAdd; i++) {
-					viewModel.queue.add(viewModel.musicDict.get(new ArrayList<>(viewModel.musicDict.keySet()).get(ThreadLocalRandom.current().nextInt(viewModel.musicDict.size()))));
+					viewModel.queue.add(new ArrayList<>(viewModel.musicDict.keySet()).get(ThreadLocalRandom.current().nextInt(viewModel.musicDict.size())));
 				}
 				musicAdapterCurrentTrack.notifyItemRangeInserted(position+1, itemsToAdd);
 				playerAlbumArtAdapter.notifyItemRangeInserted(position+1, itemsToAdd);
@@ -747,6 +818,11 @@ public class MainActivity extends AppCompatActivity{
 		}
 	}
 
+	/**
+	 * Plays the corresponding Song for the given Id in the Database
+	 *
+	 * @param id ID of Song to play
+	 */
 	public void playSong(long id) {
 		// Clear all scroll animations
 		if (playerTitleAnim != null) {
@@ -765,8 +841,10 @@ public class MainActivity extends AppCompatActivity{
 		}
 
 		musicTrack item = viewModel.musicDict.get(id);
+		if (item == null) return;
+
 		viewModel.currentTrackByPos = (viewModel.queue.size() == 0)? 0 : viewModel.currentTrackByPos + 1;
-		viewModel.queue.add(viewModel.currentTrackByPos, item);
+		viewModel.queue.add(viewModel.currentTrackByPos, id);
 		musicAdapterCurrentTrack.notifyItemInserted(viewModel.currentTrackByPos);
 		playerAlbumArtAdapter.notifyItemInserted(viewModel.currentTrackByPos);
 		if (viewModel.queue.size() != 1) {
@@ -793,7 +871,7 @@ public class MainActivity extends AppCompatActivity{
 			final Handler handler = new Handler(Looper.getMainLooper());
 			handler.post(() -> {
 				for (int i = 0; i < itemsToAdd; i++) {
-					viewModel.queue.add(viewModel.musicDict.get(new ArrayList<>(viewModel.musicDict.keySet()).get(ThreadLocalRandom.current().nextInt(viewModel.musicDict.size()))));
+					viewModel.queue.add(new ArrayList<>(viewModel.musicDict.keySet()).get(ThreadLocalRandom.current().nextInt(viewModel.musicDict.size())));
 				}
 				musicAdapterCurrentTrack.notifyItemRangeInserted(viewModel.currentTrackByPos + 1, itemsToAdd);
 				playerAlbumArtAdapter.notifyItemRangeInserted(viewModel.currentTrackByPos + 1, itemsToAdd);
@@ -801,7 +879,12 @@ public class MainActivity extends AppCompatActivity{
 		}
 	}
 
-	public void playPauseToggle(View view) {
+	/**
+	 * Toggles the Playback state of the Player
+	 *
+	 * @param view unused parameter
+	 */
+	public void playPauseToggle(@Nullable View view) {
 		if (isPlaying) {
 			mp.pause();
 			setPlaying(false);
@@ -814,38 +897,42 @@ public class MainActivity extends AppCompatActivity{
 		}
 	}
 
-	// outdated
-	public void playFromView(View view) {
-		int position = ((RecyclerView) view.getParent()).getChildLayoutPosition(view) - 1;
-		playSong(position); // unintentional call
-	}
-
-	public void openPlayer(View view) {
+	/**
+	 * Shows the floating Player
+	 *
+	 * @param view unused Parameter
+	 */
+	public void openPlayer(@Nullable View view) {
 		if (bottomSheetPlayer.getState() == BottomSheetBehavior.STATE_COLLAPSED) bottomSheetPlayer.setState(BottomSheetBehavior.STATE_EXPANDED);
 	}
 
-	public void nextSong(View view) {
+	/**
+	 * finishes the current song and starts playing the next from the Queue
+	 *
+	 * @param view unused Parameter
+	 */
+	public void nextSong(@Nullable View view) {
 		currentTrackPager.setCurrentItem(currentTrackPager.getCurrentItem() + 1, true);
 	}
 
-	public void prevSong(View view) {
+	public void prevSong(@Nullable View view) {
 		if (isPlaying && songPosition >= 5000) playSong(viewModel.currentTrackByPos); // intentional call
 		else currentTrackPager.setCurrentItem(Math.max(0, viewModel.currentTrackByPos - 1), true);
 	}
 
-	public void hidePlayer(View view) { bottomSheetPlayer.setState(BottomSheetBehavior.STATE_COLLAPSED); }
+	public void hidePlayer(@Nullable View view) { bottomSheetPlayer.setState(BottomSheetBehavior.STATE_COLLAPSED); }
 
 	public void addToQueue(long id) {
 		DialogFragmentAddedToQueue infoDialog = new DialogFragmentAddedToQueue();
 		infoDialog.show(getSupportFragmentManager(), infoDialog.getTag());
 
-		viewModel.queue.add(viewModel.currentTrackByPos + 1, viewModel.musicDict.get(id));
+		viewModel.queue.add(viewModel.currentTrackByPos + 1, id);
 		musicAdapterCurrentTrack.notifyItemInserted(viewModel.currentTrackByPos + 1);
 		playerAlbumArtAdapter.notifyItemInserted(viewModel.currentTrackByPos + 1);
 	}
 
 	public void addToQueue(ArrayList<Long> ids) {
-		viewModel.queue.addAll(viewModel.currentTrackByPos + 1, ids.stream().map(key -> viewModel.musicDict.get(key)).collect(Collectors.toList()));
+		viewModel.queue.addAll(viewModel.currentTrackByPos + 1, ids);
 		musicAdapterCurrentTrack.notifyItemRangeInserted(viewModel.currentTrackByPos + 1, ids.size());
 		playerAlbumArtAdapter.notifyItemRangeInserted(viewModel.currentTrackByPos + 1, ids.size());
 
@@ -1012,7 +1099,7 @@ public class MainActivity extends AppCompatActivity{
 
 	@Override
 	public boolean onSupportNavigateUp() {
-		if (navController.getCurrentDestination().getId() == R.id.fragmentPlaylist) {
+		if (navController.getCurrentDestination() != null && navController.getCurrentDestination().getId() == R.id.fragmentPlaylist) {
 			final FragmentPlaylist fragment = (FragmentPlaylist) getSupportFragmentManager().findFragmentById(R.id.fragmentPlaylist);
 
 			if (fragment != null) {

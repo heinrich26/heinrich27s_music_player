@@ -1,11 +1,14 @@
 package com.example.musicplayer;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Resources;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -13,12 +16,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.cardview.widget.CardView;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
@@ -27,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.musicplayer.data.musicDatabaseDao;
+import com.google.android.material.card.MaterialCardView;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +38,7 @@ import java.util.List;
 
 import static com.example.musicplayer.MainActivity.formatMillis;
 
-public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class MusicItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 	private static final int TYPE_HEADER = 0;
 	private static final int TYPE_ITEM = 1;
 	private static final int HEADER_POSITION = 0;
@@ -58,8 +62,11 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 	private boolean selectionMode;
 	private boolean editMode;
 	private final boolean isLibrary;
-	private MusicItemClickListener itemClickListener;
-	private View.OnClickListener addSongsAction;
+	private PlaylistControls playlistControls;
+
+	public void setPlaylistControls(PlaylistControls playlistControls) {
+		this.playlistControls = playlistControls;
+	}
 
 	public void setTouchHelper(ItemTouchHelper touchHelper, SimpleSwipeController simpleTouchHelper) {
 		this.touchHelper = touchHelper;
@@ -71,7 +78,9 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 	private ItemTouchHelper touchHelper;
 	private SimpleSwipeController simpleTouchHelper;
 
-	MusicAdapterFixedHeight(Context parentContext, List<musicTrack> musicFiles, musicDatabaseDao songDao, boolean isLibrary) {
+	private final float dragElevation, dragRadius;
+
+	MusicItemAdapter(Context parentContext, List<musicTrack> musicFiles, musicDatabaseDao songDao, boolean isLibrary) {
 		this.musicFiles = musicFiles;
 		this.parentContext = parentContext;
 		this.songDao = songDao;
@@ -79,6 +88,10 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 		setHasStableIds(true);
 
 		viewModel = new ViewModelProvider((parentContext instanceof MainActivity) ? (MainActivity) parentContext : (AddTitlesActivity) parentContext).get(MusicPlayerViewModel.class);
+
+		Resources res = parentContext.getResources();
+		dragElevation = res.getDimensionPixelSize(R.dimen.music_item_drag_elevation);
+		dragRadius = res.getDimensionPixelSize(R.dimen.music_item_drag_radius);
 	}
 
 	public void removeItem(int position) {
@@ -180,6 +193,7 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 	public boolean getSelectionMode() {return selectionMode;}
 
 
+	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 		if (holder instanceof musicViewHolder) {
@@ -192,14 +206,18 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 
 			musicHolder.dragHandle.setVisibility((editMode) ? View.VISIBLE : View.GONE);
 			musicHolder.dragHandle.setOnTouchListener((v, event) -> {
+//				v.performClick();
 				if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
 					touchHelper.startDrag(musicHolder);
+					musicHolder.trackHolder.setPressed(true);
+					musicHolder.trackHolder.setRadius(dragRadius);
+					musicHolder.trackHolder.setElevation(dragElevation);
+
 					return true;
 				} else return false;
 			});
 
-			final int truePos = position - 1;
-			final musicTrack track = musicFiles.get(truePos);
+			final musicTrack track = musicFiles.get(position - 1);
 
 			// Reset the Translation
 			musicHolder.trackHolder.setTranslationX(0f);
@@ -213,10 +231,10 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 
 			final byte[][] albumArt = {null};
 			if (track.hasCover || !track.testedForCover()) {
-				// should load it on another Thread
+				// TODO should load it on another Thread
 				Handler coverHandler = new Handler(Looper.getMainLooper());
 				coverHandler.post(() -> {
-					albumArt[0] = MusicAdapterFixedHeight.this.getAlbumArt(track.getPath());
+					albumArt[0] = MusicItemAdapter.this.getAlbumArt(track.getPath());
 					if (albumArt[0] != null) {
 						track.setHasCover(true);
 						Glide.with(parentContext)
@@ -246,38 +264,13 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 					musicHolder.letterTextView.setVisibility(View.VISIBLE);
 				} else musicHolder.letterTextView.setVisibility(View.GONE);
 			}
+
+			// handle playing behavior
+			final boolean isPlayed = isSongPlaying(position);
+			musicHolder.playingIndicator.setVisibility((isPlayed) ? View.VISIBLE : View.GONE);
+			musicHolder.itemView.setEnabled(isPlayed);
 		} else if (holder instanceof playlistHeader) {
-			playlistHeader headerHolder = (playlistHeader) holder;
-
-			headerHolder.playlistTitle.setText(playlistTitle);
-			headerHolder.playlistTitle.addTextChangedListener(new TextWatcher() {
-				@Override
-				public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-				@Override
-				public void onTextChanged(CharSequence s, int start, int before, int count) { playlistTitle = s.toString(); }
-
-				@Override
-				public void afterTextChanged(Editable s) {}
-			});
-			headerHolder.playlistDescription.setText(playlistDesc);
-			headerHolder.playlistDescription.addTextChangedListener(new TextWatcher() {
-				@Override
-				public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-				@Override
-				public void onTextChanged(CharSequence s, int start, int before, int count) { playlistDesc = s.toString(); }
-
-				@Override
-				public void afterTextChanged(Editable s) {}
-			});
-
-
-			headerHolder.addSongsHolder.setVisibility((editMode) ? View.VISIBLE : View.GONE);
-			headerHolder.playlistControls.setVisibility((editMode) ? View.GONE : View.VISIBLE);
-			headerHolder.itemView.setFocusable((editMode) ? View.FOCUSABLE_AUTO : View.NOT_FOCUSABLE);
-			headerHolder.playlistTitle.setEnabled(editMode);
-			headerHolder.playlistDescription.setEnabled(editMode);
+			((playlistHeader) holder).updateHeader(editMode, playlistTitle, playlistDesc);
 		}
 		// TODO deal with the textViewHolder's
 	}
@@ -312,14 +305,6 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 		this.songMenuActions = songMenuActions;
 	}
 
-	public void setItemClickListener(MusicItemClickListener listener) {
-		this.itemClickListener = listener;
-	}
-
-	public void setAddSongsAction(View.OnClickListener listener) {
-		this.addSongsAction = listener;
-	}
-
 	public void toggleEditMode() {
 		editMode = !editMode;
 		if (simpleTouchHelper != null) {
@@ -329,15 +314,15 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 		notifyDataSetChanged();
 	}
 
-	public boolean getEditMode() { return editMode; }
-
-
+	private boolean isSongPlaying(int position) {
+		return !selectionMode && getItemId(position) == viewModel.queue.get(viewModel.currentTrackByPos);
+	}
 
 	public class musicViewHolder extends RecyclerView.ViewHolder {
-		TextView songTitle, subtextInfo, letterTextView;
-		ImageView albumCover, dragHandle;
-		CheckBox checkbox;
-		CardView trackHolder;
+		final TextView songTitle, subtextInfo, letterTextView;
+		final ImageView albumCover, dragHandle, playingIndicator;
+		final CheckBox checkbox;
+		final MaterialCardView trackHolder;
 		byte[] albumArt;
 
 		public musicViewHolder(@NonNull View itemView) {
@@ -355,47 +340,118 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 
 			letterTextView = itemView.findViewById(R.id.letter_index);
 
+			playingIndicator = itemView.findViewById(R.id.playingIndicator);
+
 			trackHolder = itemView.findViewById(R.id.PlaylistItem);
 
 			trackHolder.setOnClickListener(view -> {
 				if (!getSelectionMode()) {
-					itemClickListener.onClick(this, getItemId());
+					playlistControls.playSong(this, getItemId());
+					view.setPressed(true);
 				} else {
 					toggleSelectedState(getAdapterPosition());
 				}
 			});
+
+			itemView.findViewById(R.id.PlaylistItem).setDuplicateParentStateEnabled(true);
 		}
 	}
 
+	public String getPlaylistTitle() { return playlistTitle; }
+
+	public String getPlaylistDesc() { return playlistDesc; }
+
 	public class playlistHeader extends RecyclerView.ViewHolder {
-		String title, description;
-		EditText playlistTitle, playlistDescription;
-		ImageView playlistCover;
-		LinearLayout addSongsHolder, playlistControls, modeHolder;
+		final EditText TitleEditText, DescriptionEditText;
+		final ImageView playlistCover;
+		final LinearLayout addSongsHolder, playlistControlsHolder, modeHolder, playlistDescHolder;
+		final ImageButton buttonPlay, buttonShuffle;
 		byte[] playlistArt;
 
 		public playlistHeader(@NonNull View itemView) {
 			super(itemView);
-			playlistTitle = itemView.findViewById(R.id.playlistNameEditText);
-			playlistDescription = itemView.findViewById(R.id.playlistDescriptionEditText);
-			playlistCover = itemView.findViewById(R.id.playlistCover);
+
+			TitleEditText = itemView.findViewById(R.id.playlistNameEditText);
+			TitleEditText.setEnabled(false);
+			TitleEditText.setSaveEnabled(true);
+			TitleEditText.addTextChangedListener(new TextWatcher() {
+				@Override
+				public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+				@Override
+				public void onTextChanged(CharSequence s, int start, int before, int count) { playlistTitle = s.toString(); }
+
+				@Override
+				public void afterTextChanged(Editable s) {}
+			});
+
+			DescriptionEditText = itemView.findViewById(R.id.playlistDescriptionEditText);
+			DescriptionEditText.setEnabled(false);
+			DescriptionEditText.setSaveEnabled(true);
+			DescriptionEditText.addTextChangedListener(new TextWatcher() {
+				@Override
+				public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+				@Override
+				public void onTextChanged(CharSequence s, int start, int before, int count) { playlistDesc = s.toString(); }
+
+				@Override
+				public void afterTextChanged(Editable s) {}
+			});
+
+			playlistDescHolder = itemView.findViewById(R.id.descriptionHolder);
 			addSongsHolder = itemView.findViewById(R.id.addSongsHolder);
-			addSongsHolder.setOnClickListener(addSongsAction);
+			addSongsHolder.setOnClickListener(v -> playlistControls.addSongs());
 			modeHolder = itemView.findViewById(R.id.modeHolder);
-			playlistControls = itemView.findViewById(R.id.playlistControls);
-			playlistTitle.setEnabled(false);
-			playlistTitle.setSaveEnabled(true);
-			playlistDescription.setEnabled(false);
-			playlistDescription.setSaveEnabled(true);
+			playlistControlsHolder = itemView.findViewById(R.id.playlistControls);
+
+			buttonPlay = itemView.findViewById(R.id.buttonPlayPlaylist);
+			buttonShuffle = itemView.findViewById(R.id.buttonShufflePlaylist);
+			buttonPlay.setOnClickListener(v -> {
+				playlistControls.play();
+				v.setActivated(true);
+				buttonShuffle.setActivated(false);
+			});
+			buttonShuffle.setOnClickListener(v -> {
+				playlistControls.shuffle();
+				v.setActivated(true);
+				buttonPlay.setActivated(false);
+			});
+
+
+			playlistCover = itemView.findViewById(R.id.playlistCover);
 			playlistCover.setClipToOutline(true);
+
 			itemView.setFocusable(View.NOT_FOCUSABLE);
 			itemView.setClickable(false);
 		}
-	}
 
-	public abstract static class MusicItemClickListener {
-		public void onClick(musicViewHolder viewHolder, Long id) {
+		public void updateHeader(boolean inEditMode, String title, String description) {
+			TitleEditText.setEnabled(inEditMode);
+			TitleEditText.setText(title);
+			DescriptionEditText.setEnabled(inEditMode);
+			DescriptionEditText.setText(description);
+			if (description.length() > 0 || inEditMode) {
+				playlistDescHolder.setVisibility(View.VISIBLE);
+			} else {
+				playlistDescHolder.setVisibility(View.GONE);
+			}
 
+			if (inEditMode) {
+				DescriptionEditText.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+				TitleEditText.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+
+				addSongsHolder.setVisibility(View.VISIBLE);
+				playlistControlsHolder.setVisibility(View.GONE);
+				itemView.setFocusable(View.FOCUSABLE_AUTO);
+			} else {
+				DescriptionEditText.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+				TitleEditText.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+
+				addSongsHolder.setVisibility(View.GONE);
+				playlistControlsHolder.setVisibility(View.VISIBLE);
+				itemView.setFocusable(View.NOT_FOCUSABLE);
+			}
 		}
 	}
 
@@ -407,4 +463,15 @@ public class MusicAdapterFixedHeight extends RecyclerView.Adapter<RecyclerView.V
 			textView = itemView.findViewById(R.id.textHolder);
 		}
 	}
+
+	public interface PlaylistControls {
+		void play();
+
+		void shuffle();
+
+		void addSongs();
+
+		void playSong(musicViewHolder viewHolder, Long id);
+	}
 }
+

@@ -149,7 +149,7 @@ public class FragmentPlaylistOverview extends Fragment {
 
 				// to navigate to the PlaylistFragment
 				holder.itemView.setOnClickListener(v -> {
-					FragmentPlaylistOverviewDirections.ActionPlaylistOverviewToPlaylist action = FragmentPlaylistOverviewDirections.actionPlaylistOverviewToPlaylist();
+					FragmentPlaylistOverviewDirections.ActionOverviewToPlaylist action = FragmentPlaylistOverviewDirections.actionOverviewToPlaylist();
 					action.setLibrary(false);
 					action.setPlaylist(playlist);
 					navController.navigate(action);
@@ -163,7 +163,7 @@ public class FragmentPlaylistOverview extends Fragment {
 				if (inAddMode) holder.itemView.setVisibility(View.GONE);
 				else {
 					holder.itemView.setOnClickListener(v -> {
-						FragmentPlaylistOverviewDirections.ActionPlaylistOverviewToPlaylist action = FragmentPlaylistOverviewDirections.actionPlaylistOverviewToPlaylist();
+						FragmentPlaylistOverviewDirections.ActionOverviewToPlaylist action = FragmentPlaylistOverviewDirections.actionOverviewToPlaylist();
 						action.setLibrary(false);
 						action.setCreateNew(true);
 						navController.navigate(action);

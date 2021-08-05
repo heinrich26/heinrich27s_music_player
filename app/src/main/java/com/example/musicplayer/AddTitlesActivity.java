@@ -61,7 +61,7 @@ public class AddTitlesActivity extends AppCompatActivity {
 		final Observer<ArrayList<Long>> addSelectionObserver = new Observer<ArrayList<Long>>() {
 			private final Resources res = getResources();
 			private final TextView addSelectionInfo = findViewById(R.id.selection_info);
-			private final String baseText = res.getString(R.string.addTitlesToPlaylist, playlistToAdd.name);
+			private final String baseText = getString(R.string.addTitlesToPlaylist, (playlistToAdd.name.length() > 0) ? playlistToAdd.name : getString(R.string.unnamed_playlist));
 
 			@Override
 			public void onChanged(ArrayList<Long> longs) {

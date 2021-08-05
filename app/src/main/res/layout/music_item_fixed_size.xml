@@ -6,8 +6,7 @@
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
 	android:orientation="vertical"
-	android:clickable="true"
-	android:focusable="false">
+	android:clipChildren="false">
 
 	<TextView android:id="@+id/letter_index"
 		android:focusable="false"
@@ -24,17 +23,19 @@
 		tools:visibility="visible"
 		tools:text="A" />
 
-	<androidx.cardview.widget.CardView android:id="@+id/PlaylistItem"
+	<com.google.android.material.card.MaterialCardView android:id="@+id/PlaylistItem"
 		android:duplicateParentState="true"
 		android:layout_width="match_parent"
 		android:layout_height="72dp"
+		android:clickable="true"
 		android:longClickable="true"
 		app:cardElevation="0dp"
 		app:cardCornerRadius="0dp"
+		app:rippleColor="?attr/colorControlHighlight"
 		app:cardBackgroundColor="@color/music_item_background">
 
-		<include layout="@layout/music_item"/>
+		<include layout="@layout/music_item" android:background="@null"/>
 
-	</androidx.cardview.widget.CardView>
+	</com.google.android.material.card.MaterialCardView>
 
 </LinearLayout>

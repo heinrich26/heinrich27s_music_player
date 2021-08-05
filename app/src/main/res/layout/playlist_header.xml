@@ -1,23 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
-	xmlns:tools="http://schemas.android.com/tools"
-	android:clipChildren="false">
+	android:clipChildren="false"
+	android:orientation="vertical">
 
 	<androidx.constraintlayout.widget.ConstraintLayout
 		android:id="@+id/coverTitleHelper"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:layout_marginStart="16dp"
-		android:layout_marginTop="8dp"
-		android:layout_marginEnd="20dp"
-		android:orientation="horizontal"
-		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toStartOf="parent"
-		app:layout_constraintTop_toTopOf="parent"
-		app:layout_constraintVertical_weight="1">
+		android:paddingTop="8dp"
+		android:paddingBottom="16dp"
+		android:paddingHorizontal="16dp">
 
 		<androidx.cardview.widget.CardView
 			android:id="@+id/playlistCoverCard"
@@ -29,11 +25,11 @@
 			app:layout_constraintStart_toStartOf="parent"
 			app:layout_constraintTop_toTopOf="parent">
 
-			<ImageView
-				android:id="@+id/playlistCover"
+			<ImageView android:id="@+id/playlistCover"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
-				android:src="@drawable/ic_note_twocolor" />
+				android:src="@drawable/ic_note_twocolor"
+				android:contentDescription="@string/album_art" />
 
 		</androidx.cardview.widget.CardView>
 
@@ -45,8 +41,7 @@
 			app:layout_constraintGuide_percent=".40" />
 
 
-		<EditText
-			android:id="@+id/playlistNameEditText"
+		<EditText android:id="@+id/playlistNameEditText"
 			android:layout_width="0dp"
 			android:layout_height="wrap_content"
 			android:layout_marginStart="16dp"
@@ -55,49 +50,41 @@
 			app:layout_constraintTop_toTopOf="parent"
 			android:background="@null"
 			android:hint="@string/playlist_name"
-			android:inputType="textMultiLine"
+			android:inputType="textMultiLine|textNoSuggestions"
 			android:textColor="?android:attr/textColorPrimaryNoDisable"
 			android:gravity="top"
-			android:minLines="6" />
+			android:minLines="6"
+			android:importantForAutofill="no"/>
 
 
 	</androidx.constraintlayout.widget.ConstraintLayout>
 
-
-	<View
-		android:id="@+id/divider1"
+	<LinearLayout android:id="@+id/descriptionHolder"
 		android:layout_width="match_parent"
-		android:layout_height="1dp"
-		android:layout_marginTop="16dp"
-		android:layout_marginStart="16dp"
-		android:background="@drawable/divider_horizontal"
-		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toStartOf="parent"
-		app:layout_constraintTop_toBottomOf="@+id/coverTitleHelper" />
-
-	<EditText
-		android:id="@+id/playlistDescriptionEditText"
-		android:layout_width="0dp"
 		android:layout_height="wrap_content"
-		android:paddingStart="16dp"
-		android:paddingTop="24dp"
-		android:paddingEnd="20dp"
-		android:paddingBottom="24dp"
-		android:background="@null"
-		android:hint="@string/playlist_description"
-		android:inputType="textMultiLine"
-		android:imeOptions="actionDone"
-		android:minLines="2"
-		android:textColor="?android:attr/textColorPrimaryNoDisable"
-		app:layout_constraintBottom_toTopOf="@id/modeHolder"
-		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toStartOf="parent"
-		app:layout_constraintTop_toBottomOf="@+id/divider1" />
+		android:orientation="vertical">
 
+		<View android:layout_width="match_parent"
+			android:layout_height="1dp"
+			android:layout_marginStart="16dp"
+			android:background="@drawable/divider_horizontal"/>
 
+		<EditText android:id="@+id/playlistDescriptionEditText"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:paddingHorizontal="16dp"
+			android:paddingVertical="24dp"
+			android:background="@null"
+			android:hint="@string/playlist_description"
+			android:inputType="textMultiLine|textNoSuggestions"
+			android:imeOptions="actionDone"
+			android:minLines="2"
+			android:textColor="?android:attr/textColorPrimaryNoDisable"
+			android:importantForAutofill="no" />
 
-	<LinearLayout
-		android:id="@+id/modeHolder"
+	</LinearLayout>
+
+	<LinearLayout android:id="@+id/modeHolder"
 		android:layout_width="wrap_content"
 		android:layout_height="73dp"
 		app:layout_constraintBottom_toBottomOf="parent"
@@ -112,9 +99,9 @@
 			android:layout_height="1dp"
 			android:background="@drawable/divider_horizontal" />
 
-		<LinearLayout
-			android:id="@+id/addSongsHolder"
-			android:paddingStart="16dp"
+		<LinearLayout android:id="@+id/addSongsHolder"
+			android:paddingStart="20dp"
+			android:paddingEnd="8dp"
 			android:layout_width="match_parent"
 			android:layout_height="72dp"
 			android:background="?selectableItemBackground"
@@ -124,50 +111,48 @@
 
 			<TextView android:layout_width="match_parent"
 				android:layout_height="72dp"
-				android:layout_marginEnd="8dp"
 				android:autoSizeTextType="uniform"
 				android:paddingVertical="20dp"
 				android:text="@string/add_music"
 				android:textSize="20sp"
 				app:drawableStartCompat="@drawable/select_mode_add"
 				android:drawablePadding="12dp"
-				android:paddingStart="4dp"
 				android:textColor="?android:attr/colorPrimary"/>
 
 		</LinearLayout>
 
-		<LinearLayout
-			android:id="@+id/playlistControls"
+		<LinearLayout android:id="@+id/playlistControls"
 			android:layout_width="match_parent"
 			android:layout_height="72dp"
 			android:orientation="horizontal"
 			android:paddingVertical="6dp"
 			android:paddingHorizontal="16dp">
 
-			<ImageButton
+			<ImageButton android:id="@+id/buttonPlayPlaylist"
 				android:layout_width="0dp"
 				android:layout_weight="1"
 				android:layout_height="match_parent"
 				android:src="@drawable/play_pause_selector"
 				android:scaleType="fitCenter"
-				android:padding="10dp"/>
+				android:padding="10dp"
+				android:contentDescription="@string/toggle_play_pause" />
 
-			<Space
-				android:layout_width="16dp"
+			<Space android:layout_width="16dp"
 				android:layout_height="match_parent"/>
 
-			<ImageButton
+			<ImageButton android:id="@+id/buttonShufflePlaylist"
 				android:layout_width="0dp"
 				android:layout_height="match_parent"
 				android:layout_weight="1"
 				android:src="@drawable/ic_shuffle"
 				app:tint="?android:attr/colorControlNormal"
 				android:scaleType="fitCenter"
-				android:padding="10dp"/>
+				android:padding="10dp"
+				android:contentDescription="@string/toggle_shuffle" />
 
 		</LinearLayout>
 
 
 	</LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

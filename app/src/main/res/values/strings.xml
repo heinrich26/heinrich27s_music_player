@@ -32,4 +32,7 @@
 		<item quantity="one">%d Title added to \"%2$s\".</item>
 		<item quantity="other">%d Titles added to \"%2$s\".</item>
 	</plurals>
+	<string name="album_art">Album Art</string>
+	<string name="toggle_play_pause">Toggle Play / Pause</string>
+	<string name="toggle_shuffle">Toggle Shuffle</string>
 </resources>

@@ -38,7 +38,7 @@ public class MusicPlayerViewModel extends ViewModel {
 
 	public Map<Long, musicTrack> musicDict = Collections.synchronizedMap(new HashMap<>());
 
-	public ArrayList<musicTrack> queue = new ArrayList<>();
+	public ArrayList<Long> queue = new ArrayList<>();
 
 	public int currentTrackByPos;
 

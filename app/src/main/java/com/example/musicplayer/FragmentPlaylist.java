@@ -49,7 +49,7 @@ public class FragmentPlaylist extends Fragment {
 	}
 
 	private RecyclerView playlistView;
-	private MusicAdapterFixedHeight playlistAdapter;
+	private MusicItemAdapter playlistAdapter;
 	private final List<musicTrack> playlistTracks;
 
 	private MusicPlayerViewModel viewModel;
@@ -68,6 +68,7 @@ public class FragmentPlaylist extends Fragment {
 			result -> {
 				if (result.getResultCode() == Activity.RESULT_OK) {
 					final Intent data = result.getData();
+					assert data != null;
 					final long[] resultData = data.getLongArrayExtra(RESULT_KEY);
 					if (resultData != null) {
 						FragmentPlaylist.this.addToAdapterList(resultData);
@@ -140,7 +141,7 @@ public class FragmentPlaylist extends Fragment {
 		}
 
 
-		playlistAdapter = new MusicAdapterFixedHeight(requireContext(), playlistTracks, viewModel.songDatabaseDao, isLibrary);
+		playlistAdapter = new MusicItemAdapter(requireContext(), playlistTracks, viewModel.songDatabaseDao, isLibrary);
 		playlistAdapter.setPlaylistTitle(playlistTitle);
 		playlistAdapter.setPlaylistDesc(playlistDesc);
 		BottomSheetMenu.bottomSheetMenuAction[] menuActions = new BottomSheetMenu.bottomSheetMenuAction[] {
@@ -177,9 +178,25 @@ public class FragmentPlaylist extends Fragment {
 		};
 
 		playlistAdapter.setSongMenuActions(menuActions);
-		playlistAdapter.setItemClickListener(new MusicAdapterFixedHeight.MusicItemClickListener() {
+
+		playlistAdapter.setPlaylistControls(new MusicItemAdapter.PlaylistControls() {
 			@Override
-			public void onClick(MusicAdapterFixedHeight.musicViewHolder viewHolder, Long id) {
+			public void play() {
+				app.refreshQueue(mPlaylist, false, 0);
+			}
+
+			@Override
+			public void shuffle() {
+				app.refreshQueue(mPlaylist, true, -1);
+			}
+
+			@Override
+			public void addSongs() {
+				addSongsAction();
+			}
+
+			@Override
+			public void playSong(MusicItemAdapter.musicViewHolder viewHolder, Long id) {
 				if (!inAddMode) {
 					app.playSong(id);
 
@@ -188,8 +205,6 @@ public class FragmentPlaylist extends Fragment {
 			}
 		});
 
-		playlistAdapter.setAddSongsAction(v -> addSongsAction());
-
 
 		if (inAddMode) playlistAdapter.toggleSelectMode();
 		else if (createNew) actionMode = app.startSupportActionMode(actionModeCallback);
@@ -197,6 +212,7 @@ public class FragmentPlaylist extends Fragment {
 		playlistView.setAdapter(playlistAdapter);
 
 		playlistView.setLayoutManager(new LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false));
+		playlistView.setClipToOutline(false);
 
 		int[] ATTRS = new int[] {android.R.attr.listDivider};
 
@@ -208,7 +224,7 @@ public class FragmentPlaylist extends Fragment {
 
 		DividerItemDecoration decoration = new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL);
 		decoration.setDrawable(insetDivider);
-		playlistView.addItemDecoration(decoration);
+		playlistView.addItemDecoration(new MusicItemDecoration(requireContext(), insetDivider));
 
 
 		if (!inAddMode) {
@@ -288,7 +304,6 @@ public class FragmentPlaylist extends Fragment {
 
 
 	public void addToAdapterList(long[] ids) {
-		// TODO try to allow multilples
 		final int startIndex = playlistTracks.size();
 		final List<Long> newSongs = Arrays.asList(ArrayUtils.toObject(ids));
 		if (ids != null) {
@@ -302,8 +317,6 @@ public class FragmentPlaylist extends Fragment {
 	private final ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
 
 		private boolean pressedDone;
-
-		private String oldTitle, oldDescription;
 
 		// Called when the action mode is created; startActionMode() was called
 		@Override
@@ -332,8 +345,8 @@ public class FragmentPlaylist extends Fragment {
 		@Override
 		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
 			if (item.getItemId() == R.id.action_done) {
-				playlistTitle = ((MusicAdapterFixedHeight.playlistHeader) playlistView.getChildViewHolder(playlistView.getChildAt(0))).playlistTitle.getText().toString();
-				playlistDesc = ((MusicAdapterFixedHeight.playlistHeader) playlistView.getChildViewHolder(playlistView.getChildAt(0))).playlistDescription.getText().toString();
+				playlistTitle = playlistAdapter.getPlaylistTitle();
+				playlistDesc = playlistAdapter.getPlaylistDesc();
 
 				mPlaylist.name = playlistTitle;
 				mPlaylist.description = playlistDesc;

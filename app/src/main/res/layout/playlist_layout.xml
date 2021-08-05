@@ -13,6 +13,8 @@
 		android:layout_height="match_parent"
 		android:scrollbars="vertical"
 		tools:listitem="@layout/music_item_fixed_size"
-		app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+		app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+		android:clipChildren="false"
+		android:clipToPadding="false"/>
 
 </FrameLayout>
