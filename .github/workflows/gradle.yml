@@ -8,13 +8,24 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - name: Build Android App
-      uses: sparkfabrik/android-build-action@v1.0.0
+    - uses: actions/checkout@v1
+    
+    - name: Setup JDK
+      uses: actions/setup-java@v1
       with:
-        project-path: ./
-        output-path: musicplayer.apk
+        java-version: 1.8
+        
+    - name: Run Tests
+      run: ./gradlew test
+      
+    - name: Build App
+      run: ./gradlew assemble
+      
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.4
+      with:
+        path: app/build/outputs/apk/debug/app-debug.apk
 
